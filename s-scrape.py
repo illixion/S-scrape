@@ -1,8 +1,17 @@
 #!/usr/bin/env python3
 
+import config
+import mysql.connector
 import urllib.request
 import re
 from bs4 import BeautifulSoup
+
+db = mysql.connector.connect(
+    host=config.mysql_db,
+    user=config.mysql_user,
+    password=config.mysql_pw
+)
+
 
 
 def parse_ss(url, lang="lv", category="auto"):
