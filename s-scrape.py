@@ -15,7 +15,7 @@ def parse_ss(url, lang="lv", category="auto"):
     category (string): which category is the ad from (auto/real_estate)
 
     Returns:
-    object: all data that could be extracted from the page, read docs to learn the data format
+    object: all data that could be extracted from the page, check code for data format
 
     """
 
@@ -45,7 +45,7 @@ def parse_ss(url, lang="lv", category="auto"):
                 "series": page_html.find("td", {"id": "tdo_6"}).string or "",
                 "building_type": page_html.find("td", {"id": "tdo_2"}).string or "",
                 "amenities": page_html.find("td", {"id": "tdo_7"}).string or "",
-                "phone": page_html.find("td", {"id": "phone_td_1"}).string or "",
+                "phone": page_html.find("td", {"id": "phone_td_1"}).string or "",  # not implemented
                 "listing_images": listing_images,
             }
 
@@ -79,20 +79,21 @@ def parse_ss(url, lang="lv", category="auto"):
 
 def parse_car_feature_list(array_of_td):
     feature_list = {}
-    for td in array_of_td:
-        feature_list.setdefault(td.div.text, [])
-        for feature in td.findAll("b"):
-            feature_list[td.div.text].append(feature.text)
-    return feature_list
+    for td in array_of_td.findAll('td', 'auto_c_column'):
+        for feature in td.findAll("img", {"class": "auto_c_img"}):
+            if feature.name == "b":
+                break
+            feature_list.append(feature.find_next("b").text)
 
-feature_list = {}
-for td in page_html.findAll('td', 'auto_c_column'):
-    nextHeader = td.find("div", {"class": "auto_c_head"})
-    feature_list.setdefault(nextHeader.text, [])
-    # find_all_next
-    for feature in td.findAll("img", {"class": "auto_c_img"}):
-        if feature.name == "b":
-            break
-        feature_list[td.div.text].append(feature.find_next("b").text)
 
-pprint(feature_list)
+# feature_list = {}
+# for td in page_html.findAll('td', 'auto_c_column'):
+#     nextHeader = td.find("div", {"class": "auto_c_head"})
+#     feature_list.setdefault(nextHeader.text, [])
+#     # find_all_next
+#     for feature in td.findAll("img", {"class": "auto_c_img"}):
+#         if feature.name == "b":
+#             break
+#         feature_list[td.div.text].append(feature.find_next("b").text)
+
+# pprint(feature_list)
