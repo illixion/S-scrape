@@ -1,14 +1,15 @@
 [Configuration]
+
 ; MySQL settings, self explanatory
-mysql_host = 
-mysql_db = 
-mysql_user = 
-mysql_pw = 
+mysql_host = localhost
+mysql_db = sscrape
+mysql_user = sscrape
+mysql_pw = themostsecurepasswordintheuniverse
 
 ; Source: where to look for URLs
 ; Destination: where to save them
-source_url_db = 
-destination_data_db = 
+source_url_db = source
+destination_data_db = destination
 
 ; Delay between checks, in seconds. Values less than 60 seconds are not recommended
 check_delay = 3600
