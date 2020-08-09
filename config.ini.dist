@@ -1,0 +1,17 @@
+[Configuration]
+; MySQL settings, self explanatory
+mysql_host = 
+mysql_db = 
+mysql_user = 
+mysql_pw = 
+
+; Source: where to look for URLs
+; Destination: where to save them
+source_url_db = 
+destination_data_db = 
+
+; Delay between checks, in seconds. Values less than 60 seconds are not recommended
+check_delay = 3600
+
+; Delay between requesting ss.com pages, in seconds. Increase if encountering rate limiting
+pull_delay = 1
