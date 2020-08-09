@@ -5,3 +5,4 @@ mysql_pw = ""
 
 source_url_db = ""
 destination_data_db = ""
+delay = 3600  # Delay between checks in seconds
