@@ -7,7 +7,7 @@
 #
 # Host: 127.0.0.1 (MySQL 5.6.49)
 # Database: sscrape
-# Generation Time: 2020-08-08 23:24:12 +0000
+# Generation Time: 2020-08-09 10:49:07 +0000
 # ************************************************************
 
 
@@ -58,6 +58,15 @@ CREATE TABLE `source` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+LOCK TABLES `source` WRITE;
+/*!40000 ALTER TABLE `source` DISABLE KEYS */;
+
+INSERT INTO `source` (`id`, `url`)
+VALUES
+	(1,'https://www.ss.com/ru/transport/cars/rss/');
+
+/*!40000 ALTER TABLE `source` ENABLE KEYS */;
+UNLOCK TABLES;
 
 
 
