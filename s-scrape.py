@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 
-import config
+import configparser
 import feedparser
 import mysql.connector  # Download from http://dev.mysql.com/downloads/connector/python/
 import urllib.request
 from time import sleep
 from bs4 import BeautifulSoup
 
+config = configparser.ConfigParser()
+config.read('config.ini')
 db = mysql.connector.connect(
-    host=config.mysql_host,
-    user=config.mysql_user,
-    password=config.mysql_pw,
-    database=config.mysql_db,
+    host=config['Configuration']['mysql_host'],
+    user=config['Configuration']['mysql_user'],
+    password=config['Configuration']['mysql_pw'],
+    database=config['Configuration']['mysql_db'],
 )
 
 
@@ -88,7 +90,7 @@ def bsFind(page_html, elem, param={}, type="string", contents_id=0):
 def main():
     while True:
         cursor = db.cursor()
-        cursor.execute(f"select * from {config.source_url_db}")
+        cursor.execute(f"select * from {config['Configuration']['source_url_db']}")
         sourceURLs = cursor.fetchall()
         print(f"Checking {len(sourceURLs)} feeds")
 
@@ -97,7 +99,7 @@ def main():
 
             for adEntry in rss['entries']:
                 cursor.execute(
-                    f"SELECT url, COUNT(*) FROM {config.destination_data_db} WHERE url = %s GROUP BY url",
+                    f"SELECT url, COUNT(*) FROM {config['Configuration']['destination_data_db']} WHERE url = %s GROUP BY url",
                     (adEntry['link'],)
                 )
                 query = cursor.fetchone()
@@ -108,7 +110,7 @@ def main():
 
                 result = parse_ss(adEntry['link'])
 
-                sql = f"INSERT INTO {config.destination_data_db} (url, price, model, year, engine, transmission, km_travelled, color_hex, type, inspection_until, vin, plate_no, features, phone, listing_images) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                sql = f"INSERT INTO {config['Configuration']['destination_data_db']} (url, price, model, year, engine, transmission, km_travelled, color_hex, type, inspection_until, vin, plate_no, features, phone, listing_images) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
                     adEntry['link'],
                     result['price'],
@@ -131,8 +133,8 @@ def main():
                 db.commit()
 
                 print(f"Found and saved new entry: {adEntry['link']}")
-                sleep(1)
-        sleep(config.delay)
+                sleep(int(config['Configuration']['pull_delay']))
+        sleep(int(config['Configuration']['check_delay']))
 
 
 if __name__ == "__main__":
