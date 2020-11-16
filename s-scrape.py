@@ -98,7 +98,7 @@ def parse_ss_auto(url):
 
         try:
             return {
-                "crusty_car_data": json.dumps(crusty_car_data),
+                "crusty_car_data": crusty_car_data,
                 "price": price,
                 "description": bsFind(page_html, "", type="description"),
                 "model": bsFind(page_html, "td", {"id": "tdo_31"}),
@@ -188,7 +188,14 @@ def parse_autoss(url):
             listing_images.append({"title": "Image", "url": image["src"]})
 
         table = page_html.find("table")
-        infotable = {}
+        infotable = {
+            "Pirmā reģistrācija": "",
+            "Degviela": "",
+            "Pārnesumkārba": "",
+            "Nobraukums (km)": "",
+            "Krāsa": "",
+            "Virsbūves tips": "",
+        }
         for row in table.findAll("tr"):
             col = row.findAll("td")
             try:
@@ -199,7 +206,7 @@ def parse_autoss(url):
         result_object = {
             "crusty_car_data": [],
             "price": 0,
-            "description": None,
+            "description": "",
             "model": None,
             "year": None,
             "engine": None,
@@ -219,46 +226,55 @@ def parse_autoss(url):
             "subcat": None,
         }
 
-        try:
-            result_object["crusty_car_data"] = [
-                {
-                    "heading": "Marka",
-                    "item": page_html.select(".is-active")[0].text,
-                },
-                {
-                    "heading": "Izlaiduma gads",
-                    "item": infotable["Pirmā reģistrācija"].split("/")[-1],
-                },
-                {
-                    "heading": "Motors",
-                    "item": infotable["Degviela"],
-                },
-                {
-                    "heading": "Ātr.kārba",
-                    "item": infotable["Pārnesumkārba"],
-                },
-                {
-                    "heading": "Nobraukums, km",
-                    "item": infotable["Nobraukums (km)"],
-                },
-                {
-                    "heading": "Krāsa",
-                    "item": infotable["Krāsa"],
-                    "color": infotable["Krāsa"],
-                },
-                {
-                    "heading": "Virsūbes tips",
-                    "item": infotable["Virsbūves tips"],
-                },
-                {
-                    "heading": "Tehniskā skate",
-                    "item": "",
-                },
-            ]
-        except AttributeError as e:
-            print(
-                f"Error while parsing C-data in {url}, autoss might've changed format: {e}"
-            )
+        result_object["crusty_car_data"].append([
+            {
+                "heading": "Marka",
+                "item": page_html.select(".is-active")[0].text,
+            },
+        ])
+        result_object["crusty_car_data"].append([
+            {
+                "heading": "Izlaiduma gads",
+                "item": infotable["Pirmā reģistrācija"].split("/")[-1],
+            },
+        ])
+        result_object["crusty_car_data"].append([
+            {
+                "heading": "Motors",
+                "item": infotable["Degviela"],
+            },
+        ])
+        result_object["crusty_car_data"].append([
+            {
+                "heading": "Ātr.kārba",
+                "item": infotable["Pārnesumkārba"],
+            },
+        ])
+        result_object["crusty_car_data"].append([
+            {
+                "heading": "Nobraukums, km",
+                "item": infotable["Nobraukums (km)"],
+            },
+        ])
+        result_object["crusty_car_data"].append([
+            {
+                "heading": "Krāsa",
+                "item": infotable["Krāsa"],
+                "color": infotable["Krāsa"],
+            },
+        ])
+        result_object["crusty_car_data"].append([
+            {
+                "heading": "Virsūbes tips",
+                "item": infotable["Virsbūves tips"],
+            },
+        ])
+        result_object["crusty_car_data"].append([
+            {
+                "heading": "Tehniskā skate",
+                "item": "",
+            },
+        ])
 
         try:
             result_object["price"] = "".join(
@@ -271,7 +287,7 @@ def parse_autoss(url):
         except:
             pass
         try:
-            result_object["description"] = bsFind(page_html, "", type="description")
+            result_object["description"] = page_html.select_one(".is-7").find("p").text
         except:
             pass
         try:
@@ -344,60 +360,64 @@ def parse_mm(url):
         listing_images = []
         for image in page_html.select(".rsTmb"):
             listing_images.append({"title": "Image", "url": image["src"]})
+        result_object = {
+            "crusty_car_data": [
+                {
+                    "heading": "Izlaiduma gads",  # "Year of manufacture"
+                    "item": "",
+                },
+                {
+                    "heading": "Motors",
+                    "item": "",
+                },
+                {
+                    "heading": "Ātr.kārba",  # gearbox
+                    "item": "",
+                },
+                {
+                    "heading": "Nobraukums, km",  # mileage
+                    "item": "",
+                },
+                {
+                    "heading": "Krāsa",  # color
+                    "item": "",
+                    "color": "",
+                },
+                {
+                    "heading": "Virsūbes tips",  # body type
+                    "item": "",
+                },
+                {
+                    "heading": "Tehniskā skate",  # inspection date
+                    "item": "",
+                },
+            ],  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
+            "price": 0,
+            "description": "",
+            "features": [],
+            "phone": "",
+            "listing_images": "",
+            "main_image": "",
+            "date": datetime.now().strftime("%d.%m.%Y"),
+            "time": datetime.now().strftime("%H:%M"),
+            "subcat": "",
+        }
         try:
-            result_object = {
-                "crusty_car_data": [
-                    {
-                        "heading": "Marka",
-                        "item": page_html.select_one(".breadcrumb")
-                        .find("li", {"class": "penult"})
-                        .text,
-                    },
-                    {
-                        "heading": "Izlaiduma gads",  # "Year of manufacture"
-                        "item": "",
-                    },
-                    {
-                        "heading": "Motors",
-                        "item": "",
-                    },
-                    {
-                        "heading": "Ātr.kārba",  # gearbox
-                        "item": "",
-                    },
-                    {
-                        "heading": "Nobraukums, km",  # mileage
-                        "item": "",
-                    },
-                    {
-                        "heading": "Krāsa",  # color
-                        "item": "",
-                        "color": "",
-                    },
-                    {
-                        "heading": "Virsūbes tips",  # body type
-                        "item": "",
-                    },
-                    {
-                        "heading": "Tehniskā skate",  # inspection date
-                        "item": "",
-                    },
-                ],  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
-                "price": 0,
-                "description": "",
-                "features": [],
-                "phone": "",
-                "listing_images": "",
-                "main_image": "",
-                "date": datetime.now().strftime("%d.%m.%Y"),
-                "time": datetime.now().strftime("%H:%M"),
-                "subcat": "",
-            }
-        except AttributeError as e:
-            print(
-                f"Error while parsing C-data in {url}, autoss might've changed format: {e}"
-            )
-            return None
+            result_object['crusty_car_data'].append([
+                {
+                    "heading": "Marka",
+                    "item": page_html.select_one(".breadcrumb")
+                    .find("li", {"class": "penult"})
+                    .text,
+                },
+            ])
+        except:
+            result_object['crusty_car_data'].append([
+                {
+                    "heading": "Marka",
+                    "item": "",
+                },
+            ])
 
         try:
             result_object["price"] = "".join(
@@ -445,7 +465,15 @@ def parse_reklama(url):
         listing_images = []
         for image in page_html.select_one(".coda-nav").findAll("img"):
             listing_images.append({"title": "Image", "url": image["data-src"]})
-        infotable = {}
+        infotable = {
+            "Marka": "",
+            "Gads": "",
+            "Dzin.": "",
+            "Pārnesumkārba:": "",
+            "Nobraukums": "",
+            "Krāsa": "",
+            "Virsbūve": "",
+        }
         for table in page_html.findAll("table", {"id": "details"}):
             for row in table.findAll("tr"):
                 col = row.findAll("td")
@@ -558,7 +586,16 @@ def parse_viss(url):
                 {"title": "Image", "url": "http://viss.lv" + image["src"]}
             )
 
-        infotable = {}
+        infotable = {
+            "Auto marka:": "",
+            "Izlaiduma gads:": "",
+            "Motora tilpums:": "",
+            "Degvielas veids:": "",
+            "Atrumkārba:": "",
+            "Nobraukums (km):": "",
+            "Krāsa:": "",
+            "Virsbūves tips:": "",
+        }
         for table in page_html.findAll("table", {"class": "ad_view_user_text"}):
             for row in table.findAll("tr"):
                 col = row.findAll("td")
@@ -617,7 +654,7 @@ def parse_viss(url):
             }
         except AttributeError as e:
             print(
-                f"Error while parsing C-data in {url}, reklama might've changed format: {e}"
+                f"Error while parsing C-data in {url}, viss might've changed format: {e}"
             )
             return None
 
@@ -751,7 +788,7 @@ def main():
                     result["listing_images"],
                     int(result["price"]),
                     adEntry["link"],
-                    result["crusty_car_data"],
+                    json.dumps(result["crusty_car_data"]),
                     result["features"],
                     None,
                     result["date"],
@@ -786,11 +823,11 @@ def main():
                 sql = f"INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
                     result["main_image"].replace("https:", ""),
-                    result["description"][:254],
+                    result["description"],
                     result["listing_images"],
                     int(result["price"]),
                     elem["href"],
-                    result["crusty_car_data"],
+                    json.dumps(result["crusty_car_data"]),
                     result["features"],
                     None,
                     result["date"],
@@ -942,15 +979,15 @@ def main():
                 if row_count > 0:
                     continue
 
-                result = parse_autoss(elem["href"])
+                result = parse_mm(elem["href"])
                 sql = f"INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
                     result["main_image"].replace("https:", ""),
-                    result["description"][:254],
+                    result["description"],
                     result["listing_images"],
                     int(result["price"]),
                     elem["href"],
-                    result["crusty_car_data"],
+                    json.dumps(result["crusty_car_data"]),
                     result["features"],
                     None,
                     result["date"],
@@ -961,7 +998,7 @@ def main():
                 db.commit()
 
         else:
-            print("autoss returned", page.getcode())
+            print("mm.lv returned", page.getcode())
 
         sourceURLs = [
             "https://reklama.bb.lv/lv/transport/cars/sell/table.html?rss",
@@ -986,11 +1023,11 @@ def main():
                 sql = f"INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
                     result["main_image"].replace("https:", ""),
-                    result["description"][:254],
+                    result["description"],
                     result["listing_images"],
                     int(result["price"]),
                     adEntry["link"],
-                    result["crusty_car_data"],
+                    json.dumps(result["crusty_car_data"]),
                     result["features"],
                     None,
                     result["date"],
@@ -1024,11 +1061,11 @@ def main():
                 sql = f"INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
                     result["main_image"].replace("https:", ""),
-                    result["description"][:254],
+                    result["description"],
                     result["listing_images"],
                     int(result["price"]),
                     href,
-                    result["crusty_car_data"],
+                    json.dumps(result["crusty_car_data"]),
                     result["features"],
                     None,
                     result["date"],
@@ -1039,7 +1076,7 @@ def main():
                 db.commit()
 
         else:
-            print("autoss returned", page.getcode())
+            print("viss returned", page.getcode())
 
         # BEGIN cooldown
         sleep(int(config["Configuration"]["check_delay"]))
