@@ -8,6 +8,7 @@ import sys
 import json
 from time import sleep
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -213,8 +214,8 @@ def parse_autoss(url):
             "phone": None,
             "listing_images": None,
             "main_image": "",
-            "date": None,
-            "time": None,
+            "date": datetime.now().strftime("%d.%m.%Y"),
+            "time": datetime.now().strftime("%H:%M"),
             "subcat": None,
         }
 
@@ -388,8 +389,8 @@ def parse_mm(url):
                 "phone": "",
                 "listing_images": "",
                 "main_image": "",
-                "date": None,
-                "time": None,
+                "date": datetime.now().strftime("%d.%m.%Y"),
+                "time": datetime.now().strftime("%H:%M"),
                 "subcat": "",
             }
         except AttributeError as e:
@@ -496,8 +497,8 @@ def parse_reklama(url):
                 "phone": "",
                 "listing_images": "",
                 "main_image": "",
-                "date": None,
-                "time": None,
+                "date": datetime.now().strftime("%d.%m.%Y"),
+                "time": datetime.now().strftime("%H:%M"),
                 "subcat": "",
             }
         except AttributeError as e:
@@ -610,8 +611,8 @@ def parse_viss(url):
                 "phone": "",
                 "listing_images": "",
                 "main_image": "",
-                "date": None,
-                "time": None,
+                "date": datetime.now().strftime("%d.%m.%Y"),
+                "time": datetime.now().strftime("%H:%M"),
                 "subcat": "",
             }
         except AttributeError as e:
@@ -888,8 +889,8 @@ def main():
                     "phone": json_result["phone"],
                     "listing_images": listing_images,
                     "main_image": json_result["images"][0]["large"],
-                    "date": None,
-                    "time": None,
+                    "date": datetime.now().strftime("%d.%m.%Y"),
+                    "time": datetime.now().strftime("%H:%M"),
                     "subcat": json_result["brand"]["caption"],
                 }
 
