@@ -592,7 +592,116 @@ def parse_reklama(url):
 
 
 def parse_elots(url):
-    pass
+    page = urllib.request.urlopen(url, timeout=10)
+    if page.getcode() == 200:
+        page_html = BeautifulSoup(page.read(), "html.parser")
+        listing_images = []
+        for image in page_html.select_one(".bxslider").findAll("img", {"class": "bxslider"}):
+            listing_images.append(
+                {"title": "Image", "url": image["src"]}
+            )
+
+        infotable = {
+            "Automašīnas zīmols": "",
+            "Modelis": "",
+            "Reģistrācijas gads": "",
+            "Degvielas tips": "",
+            "Pārnesumu kārba": "",
+            "Stāvoklis": "",
+            "Nobraukums": "",
+        }
+        for row in page_html.select_one("#cfContainer").findAll("div", {"class": "rounded-small"}):
+            try:
+                infotable[row.select_one('.detail-line-label').text] = row.select_one('.detail-line-value').text
+            except:
+                pass
+
+        try:
+            result_object = {
+                "crusty_car_data": [
+                    {
+                        "heading": "Marka",
+                        "item": infotable["Automašīnas zīmols"],
+                    },
+                    {
+                        "heading": "Izlaiduma gads",  # "Year of manufacture"
+                        "item": infotable["Reģistrācijas gads"],
+                    },
+                    {
+                        "heading": "Motors",
+                        "item": "",
+                    },
+                    {
+                        "heading": "Ātr.kārba",  # gearbox
+                        "item": infotable["Pārnesumu kārba"],
+                    },
+                    {
+                        "heading": "Nobraukums, km",  # mileage
+                        "item": infotable["Nobraukums"],
+                    },
+                    {
+                        "heading": "Krāsa",  # color
+                        "item": "",
+                        "color": "",
+                    },
+                    {
+                        "heading": "Virsūbes tips",  # body type
+                        "item": "",
+                    },
+                    {
+                        "heading": "Tehniskā skate",  # inspection date
+                        "item": "",
+                    },
+                ],  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
+                "price": 0,
+                "description": "",
+                "features": "[]",
+                "phone": "",
+                "listing_images": "",
+                "main_image": "",
+                "date": datetime.now().strftime("%d.%m.%Y"),
+                "time": datetime.now().strftime("%H:%M"),
+                "subcat": "Cits",
+            }
+        except AttributeError as e:
+            print(
+                f"Error while parsing C-data in {url}, e-lots might've changed format: {e}"
+            )
+            return None
+
+        try:
+            price = "".join(i for i in page_html.select_one(".pricetag").text.strip().split(".")[0] if i.isdigit())
+            if price != '':
+                result_object["price"] = price
+        except:
+            pass
+        try:
+            result_object["main_image"] = listing_images[0]["url"]
+        except:
+            pass
+        try:
+            result_object["description"] = page_html.select_one(".detail-line-content").text.strip()
+        except:
+            pass
+        try:
+            result_object["phone"] = "".join(
+                i for i in page_html.select_one(".phoneBlock").text if i.isdigit()
+            )
+        except:
+            pass
+        try:
+            result_object["listing_images"] = json.dumps(listing_images)
+        except:
+            pass
+        try:
+            result_object["subcat"] = infotable["Automašīnas zīmols"].strip()
+        except:
+            pass
+
+        return result_object
+    else:
+        print("connection error:", page.getcode())
+        return None
 
 
 def parse_viss(url):
@@ -861,6 +970,40 @@ def main():
                 db.commit()
     else:
         print("connection to reklama failed")
+
+    # e-lots
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0",
+        "Accept": "*/*",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Content-Type": "text/plain;charset=UTF-8",
+        "Origin": "https://e-lots.lv",
+        "DNT": "1",
+        "Connection": "keep-alive",
+        "Referer": "https://e-lots.lv",
+        "Cache-Control": "max-age=0",
+    }
+    req = urllib.request.Request("https://e-lots.lv/category/automobili", headers=headers)
+    page = urllib.request.urlopen(req, timeout=10)
+
+    if page.getcode() == 200:
+        page_html = BeautifulSoup(page.read(), "html.parser")
+        for manufacturer in page_html.find("select", {"id": "cf.25"}).findAll("option")[1:]:
+            manufacturer = manufacturer.text.strip()
+            if manufacturer not in currentCats:
+                sql = "INSERT INTO sub_categories (main_categorie, category_filter, category_name, category_description, item_count, url) VALUES (%s, %s, %s, %s, %s, %s)"
+                val = (
+                    1,
+                    None,
+                    manufacturer,
+                    manufacturer,
+                    0,
+                    manufacturer.lower().replace(" ", "-"),
+                )
+                cursor.execute(sql, val)
+                db.commit()
+    else:
+        print("connection to e-lots.lv failed")
 
     # viss
     headers = {
@@ -1203,6 +1346,45 @@ def main():
 
                 print(f"Found and saved new entry: {adEntry['link']}")
                 sleep(int(config["Configuration"]["pull_delay"]))
+
+        print("Checking e-lots.lv feeds")
+        page = urllib.request.urlopen("https://e-lots.lv/category/automobili", timeout=10)
+
+        if page.getcode() == 200:
+            page_html = BeautifulSoup(page.read(), "html.parser")
+            for elem in page_html.select_one("#postsList").findAll("a", href=True):
+                if not elem['href'].endswith(".html"):
+                    continue
+                cursor.execute(
+                    "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
+                    (elem['href'],),
+                )
+                query = cursor.fetchone()
+                # gets the number of rows affected by the command executed
+                row_count = cursor.rowcount
+                if row_count > 0:
+                    continue
+
+                result = parse_elots(elem['href'])
+                sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                val = (
+                    result["main_image"].replace("https:", ""),
+                    result["description"],
+                    result["listing_images"],
+                    int(result["price"]),
+                    elem['href'],
+                    json.dumps(result["crusty_car_data"]),
+                    result["features"],
+                    None,
+                    result["date"],
+                    result["time"],
+                    currentCats[result["subcat"]],
+                )
+                cursor.execute(sql, val)
+                db.commit()
+
+        else:
+            print("e-lots.lv returned", page.getcode())
 
         print("Checking viss.lv feeds")
         headers = {
