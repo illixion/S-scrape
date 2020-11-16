@@ -4,7 +4,6 @@ import configparser
 import feedparser
 import mysql.connector  # Download from http://dev.mysql.com/downloads/connector/python/
 import urllib.request
-import sys
 import json
 from time import sleep
 from bs4 import BeautifulSoup
@@ -33,7 +32,7 @@ def parse_ss_auto(url):
 
     """
 
-    page = urllib.request.urlopen(url)
+    page = urllib.request.urlopen(url, timeout=10)
     if page.getcode() == 200:
         page_html = BeautifulSoup(page.read(), "html.parser")
 
@@ -173,12 +172,11 @@ def bsFind(page_html, elem, param={}, type="string", contents_id=0):
             ]
 
     except:
-        print(f"couldn't find {elem} with opt {param} in page source")
         return None
 
 
 def parse_autoss(url):
-    page = urllib.request.urlopen(url)
+    page = urllib.request.urlopen(url, timeout=10)
     if page.getcode() == 200:
         page_html = BeautifulSoup(page.read(), "html.parser")
         listing_images = []
@@ -217,7 +215,7 @@ def parse_autoss(url):
             "inspection_until": None,
             "vin": None,  # not implemented
             "plate_no": None,  # not implemented
-            "features": "",
+            "features": "[]",
             "phone": None,
             "listing_images": None,
             "main_image": "",
@@ -226,55 +224,71 @@ def parse_autoss(url):
             "subcat": None,
         }
 
-        result_object["crusty_car_data"].append([
-            {
-                "heading": "Marka",
-                "item": page_html.select(".is-active")[0].text,
-            },
-        ])
-        result_object["crusty_car_data"].append([
-            {
-                "heading": "Izlaiduma gads",
-                "item": infotable["Pirmā reģistrācija"].split("/")[-1],
-            },
-        ])
-        result_object["crusty_car_data"].append([
-            {
-                "heading": "Motors",
-                "item": infotable["Degviela"],
-            },
-        ])
-        result_object["crusty_car_data"].append([
-            {
-                "heading": "Ātr.kārba",
-                "item": infotable["Pārnesumkārba"],
-            },
-        ])
-        result_object["crusty_car_data"].append([
-            {
-                "heading": "Nobraukums, km",
-                "item": infotable["Nobraukums (km)"],
-            },
-        ])
-        result_object["crusty_car_data"].append([
-            {
-                "heading": "Krāsa",
-                "item": infotable["Krāsa"],
-                "color": infotable["Krāsa"],
-            },
-        ])
-        result_object["crusty_car_data"].append([
-            {
-                "heading": "Virsūbes tips",
-                "item": infotable["Virsbūves tips"],
-            },
-        ])
-        result_object["crusty_car_data"].append([
-            {
-                "heading": "Tehniskā skate",
-                "item": "",
-            },
-        ])
+        result_object["crusty_car_data"].append(
+            [
+                {
+                    "heading": "Marka",
+                    "item": page_html.select(".is-active")[0].text,
+                },
+            ]
+        )
+        result_object["crusty_car_data"].append(
+            [
+                {
+                    "heading": "Izlaiduma gads",
+                    "item": infotable["Pirmā reģistrācija"].split("/")[-1],
+                },
+            ]
+        )
+        result_object["crusty_car_data"].append(
+            [
+                {
+                    "heading": "Motors",
+                    "item": infotable["Degviela"],
+                },
+            ]
+        )
+        result_object["crusty_car_data"].append(
+            [
+                {
+                    "heading": "Ātr.kārba",
+                    "item": infotable["Pārnesumkārba"],
+                },
+            ]
+        )
+        result_object["crusty_car_data"].append(
+            [
+                {
+                    "heading": "Nobraukums, km",
+                    "item": infotable["Nobraukums (km)"],
+                },
+            ]
+        )
+        result_object["crusty_car_data"].append(
+            [
+                {
+                    "heading": "Krāsa",
+                    "item": infotable["Krāsa"],
+                    "color": infotable["Krāsa"],
+                },
+            ]
+        )
+        result_object["crusty_car_data"].append(
+            [
+                {
+                    "heading": "Virsūbes tips",
+                    "item": infotable["Virsbūves tips"],
+                },
+            ]
+        )
+        result_object["crusty_car_data"].append(
+            [
+                {
+                    "heading": "Tehniskā skate",
+                    "item": "",
+                },
+            ]
+        )
 
         try:
             result_object["price"] = "".join(
@@ -354,12 +368,13 @@ def parse_mm(url):
         "Cache-Control": "max-age=0",
     }
     req = urllib.request.Request(url, headers=headers)
-    page = urllib.request.urlopen(req)
+    page = urllib.request.urlopen(req, timeout=10)
     if page.getcode() == 200:
         page_html = BeautifulSoup(page.read(), "html.parser")
         listing_images = []
         for image in page_html.select(".rsTmb"):
             listing_images.append({"title": "Image", "url": image["src"]})
+
         result_object = {
             "crusty_car_data": [
                 {
@@ -394,30 +409,34 @@ def parse_mm(url):
             ],  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
             "price": 0,
             "description": "",
-            "features": [],
+            "features": "[]",
             "phone": "",
             "listing_images": "",
             "main_image": "",
             "date": datetime.now().strftime("%d.%m.%Y"),
             "time": datetime.now().strftime("%H:%M"),
-            "subcat": "",
+            "subcat": "Cits",
         }
         try:
-            result_object['crusty_car_data'].append([
-                {
-                    "heading": "Marka",
-                    "item": page_html.select_one(".breadcrumb")
-                    .find("li", {"class": "penult"})
-                    .text,
-                },
-            ])
+            result_object["crusty_car_data"].append(
+                [
+                    {
+                        "heading": "Marka",
+                        "item": page_html.select_one(".breadcrumb")
+                        .find("li", {"class": "penult"})
+                        .text,
+                    },
+                ]
+            )
         except:
-            result_object['crusty_car_data'].append([
-                {
-                    "heading": "Marka",
-                    "item": "",
-                },
-            ])
+            result_object["crusty_car_data"].append(
+                [
+                    {
+                        "heading": "Marka",
+                        "item": "",
+                    },
+                ]
+            )
 
         try:
             result_object["price"] = "".join(
@@ -459,7 +478,7 @@ def parse_mm(url):
 
 
 def parse_reklama(url):
-    page = urllib.request.urlopen(url)
+    page = urllib.request.urlopen(url, timeout=10)
     if page.getcode() == 200:
         page_html = BeautifulSoup(page.read(), "html.parser")
         listing_images = []
@@ -521,13 +540,13 @@ def parse_reklama(url):
                 ],  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
                 "price": 0,
                 "description": "",
-                "features": [],
+                "features": "[]",
                 "phone": "",
                 "listing_images": "",
                 "main_image": "",
                 "date": datetime.now().strftime("%d.%m.%Y"),
                 "time": datetime.now().strftime("%H:%M"),
-                "subcat": "",
+                "subcat": "Cits",
             }
         except AttributeError as e:
             print(
@@ -562,7 +581,7 @@ def parse_reklama(url):
         except:
             pass
         try:
-            result_object["subcat"] = infotable["Marka"]
+            result_object["subcat"] = infotable["Marka:"]
         except:
             pass
 
@@ -577,7 +596,7 @@ def parse_elots(url):
 
 
 def parse_viss(url):
-    page = urllib.request.urlopen(url)
+    page = urllib.request.urlopen(url, timeout=10)
     if page.getcode() == 200:
         page_html = BeautifulSoup(page.read(), "html.parser")
         listing_images = []
@@ -644,13 +663,13 @@ def parse_viss(url):
                 ],  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
                 "price": 0,
                 "description": "",
-                "features": [],
+                "features": "[]",
                 "phone": "",
                 "listing_images": "",
                 "main_image": "",
                 "date": datetime.now().strftime("%d.%m.%Y"),
                 "time": datetime.now().strftime("%H:%M"),
-                "subcat": "",
+                "subcat": "Cits",
             }
         except AttributeError as e:
             print(
@@ -660,7 +679,7 @@ def parse_viss(url):
 
         try:
             result_object["price"] = "".join(
-                i for i in infotable["Telefons:"] if i.isdigit()
+                i for i in infotable["Cena:"].split(".")[0] if i.isdigit()
             )
         except:
             pass
@@ -674,9 +693,7 @@ def parse_viss(url):
             pass
         try:
             result_object["phone"] = "".join(
-                i
-                for i in infotable["Telefons:"]
-                if i.isdigit()
+                i for i in infotable["Telefons:"] if i.isdigit()
             )
         except:
             pass
@@ -685,7 +702,7 @@ def parse_viss(url):
         except:
             pass
         try:
-            result_object["subcat"] = infotable["Auto marka:"]
+            result_object["subcat"] = infotable["Auto marka:"].strip()
         except:
             pass
 
@@ -703,7 +720,7 @@ def main():
     currentCats = [i[0] for i in cursor.fetchall()]
 
     # ss.com
-    catPage = urllib.request.urlopen("https://www.ss.lv/lv/transport/cars/")
+    catPage = urllib.request.urlopen("https://www.ss.lv/lv/transport/cars/", timeout=10)
     if catPage.getcode() == 200:
         catPage_html = BeautifulSoup(catPage.read(), "html.parser")
         for manufacturer in catPage_html.find("form", {"id": "filter_frm"}).findAll(
@@ -726,10 +743,145 @@ def main():
         print("connection to ss.lv failed")
 
     # autoss.lv
-    catPage = urllib.request.urlopen("http://autoss.eu/")
+    catPage = urllib.request.urlopen("http://autoss.eu/", timeout=10)
     if catPage.getcode() == 200:
         catPage_html = BeautifulSoup(catPage.read(), "html.parser")
         for manufacturer in catPage_html.select("div.is-multiline")[0].findAll("a"):
+            manufacturer = manufacturer.text
+            if manufacturer not in currentCats:
+                sql = "INSERT INTO sub_categories (main_categorie, category_filter, category_name, category_description, item_count, url) VALUES (%s, %s, %s, %s, %s, %s)"
+                val = (
+                    1,
+                    None,
+                    manufacturer,
+                    manufacturer,
+                    0,
+                    manufacturer.lower().replace(" ", "-"),
+                )
+                cursor.execute(sql, val)
+                db.commit()
+    else:
+        print("connection to autoss.eu failed")
+
+    # zip
+    payload = '[["Items__Get",{"_t":48,"pg":1,"url":"/lv/transports/vieglie-auto/?pg=1"},{"Items__Item":["activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGrouped":["group","group2","place","place2","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGroupedPriced":["currency","group","group2","place","place2","price","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemFlat":["address","area","buildingType","coords","currency","features","floor","floors","period","place","place2","price","rooms","series","status","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemCar":["body","brand","color","country","currency","drive","engine","features","fuel","gearbox","gearCount","mileage","model","place","place2","price","ta","vin","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemHouse":["address","area","buildingType","coords","currency","features","floors","landArea","period","place","place2","price","rooms","status","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBike":["brand","currency","engine","model","place","place2","price","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemLand":["area","coords","currency","landType","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemOffice":["address","area","buildingType","coords","currency","floor","floors","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBicycle":["brand","currency","model","place","place2","price","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTruck":["brand","currency","engine","model","place","place2","price","vehicleType","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemJob":["companyName","companyRegNr","jobType","place","place2","position","workArea","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitled":["group","group2","place","place2","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitledPriced":["currency","group","group2","place","place2","price","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitledPlace":["currency","group","group2","place","place2","price","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemPriced":["currecny","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBuyGrouped":["group","group2","place","place2","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemFreeStuff":["group","group2","place","place2","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGroupedSell":["currency","group","group2","place","place2","price","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Categories__Item":["id","parentId","title","icon","isNew","isList","seoUrl","itemCount","meta","parentCategory"]}],["Filters__GetData",{"_t":89,"url":"/lv/transports/vieglie-auto/?pg=1"},{}],["Categories__GetCategory",{"_t":45,"id":69},{"Categories__Item":["id","parentId","title","icon","isNew","isList","seoUrl","itemCount","meta","parentCategory"]}]]'
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0",
+        "Accept": "*/*",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Content-Type": "text/plain;charset=UTF-8",
+        "Origin": "https://zip.lv",
+        "DNT": "1",
+        "Connection": "keep-alive",
+        "Referer": "https://zip.lv/lv/transports/vieglie-auto/?pg=1",
+        "Cache-Control": "max-age=0",
+        "TE": "Trailers",
+    }
+    req = urllib.request.Request(
+        "https://zip.lv/api/rpc.php?apikey&uid=0&lang=lv&m=Items__Get%2CFilters__GetData%2CCategories__GetCategory",
+        data=payload.encode("ascii"),
+        headers=headers,
+    )
+    page = urllib.request.urlopen(req, timeout=10)
+    if page.getcode() == 200:
+        json_result = json.loads(page.read())
+
+        for manufacturer in json_result[1][0]["groups"][0]["filters"][0]["values"]:
+            manufacturer = manufacturer["caption"]
+            if manufacturer not in currentCats:
+                sql = "INSERT INTO sub_categories (main_categorie, category_filter, category_name, category_description, item_count, url) VALUES (%s, %s, %s, %s, %s, %s)"
+                val = (
+                    1,
+                    None,
+                    manufacturer,
+                    manufacturer,
+                    0,
+                    manufacturer.lower().replace(" ", "-"),
+                )
+                cursor.execute(sql, val)
+                db.commit()
+
+    else:
+        print("connection to zip.lv failed")
+
+    # mm.lv
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0",
+        "Accept": "*/*",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Content-Type": "text/plain;charset=UTF-8",
+        "Origin": "https://mm.lv",
+        "DNT": "1",
+        "Connection": "keep-alive",
+        "Referer": "https://mm.lv",
+        "Cache-Control": "max-age=0",
+    }
+    req = urllib.request.Request("https://mm.lv/vieglie-auto", headers=headers)
+    page = urllib.request.urlopen(req, timeout=10)
+    if page.getcode() == 200:
+        page_html = BeautifulSoup(page.read(), "html.parser")
+
+        for manufacturer in page_html.select_one(".search-cat-list").findAll(
+            "a", href=True
+        ):
+            manufacturer = manufacturer.text
+            if manufacturer not in currentCats:
+                sql = "INSERT INTO sub_categories (main_categorie, category_filter, category_name, category_description, item_count, url) VALUES (%s, %s, %s, %s, %s, %s)"
+                val = (
+                    1,
+                    None,
+                    manufacturer,
+                    manufacturer,
+                    0,
+                    manufacturer.lower().replace(" ", "-"),
+                )
+                cursor.execute(sql, val)
+                db.commit()
+
+    else:
+        print("connection to mm.lv failed")
+
+    # reklama
+    catPage = urllib.request.urlopen("https://reklama.bb.lv/lv/transport/cars/menus.html", timeout=10)
+    if catPage.getcode() == 200:
+        catPage_html = BeautifulSoup(catPage.read(), "html.parser")
+        for manufacturer in catPage_html.select_one(".cats").findAll("a", href=True):
+            manufacturer = manufacturer.text
+            if manufacturer not in currentCats:
+                sql = "INSERT INTO sub_categories (main_categorie, category_filter, category_name, category_description, item_count, url) VALUES (%s, %s, %s, %s, %s, %s)"
+                val = (
+                    1,
+                    None,
+                    manufacturer,
+                    manufacturer,
+                    0,
+                    manufacturer.lower().replace(" ", "-"),
+                )
+                cursor.execute(sql, val)
+                db.commit()
+    else:
+        print("connection to reklama failed")
+
+    # viss
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0",
+        "Accept": "*/*",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Content-Type": "text/plain;charset=UTF-8",
+        "Origin": "http://viss.lv",
+        "DNT": "1",
+        "Connection": "keep-alive",
+        "Referer": "http://viss.lv",
+        "Cache-Control": "max-age=0",
+    }
+    req = urllib.request.Request("http://viss.lv/lv/sludinajumi/c/13/", headers=headers)
+    catPage = urllib.request.urlopen(req, timeout=10)
+
+    if catPage.getcode() == 200:
+        catPage_html = BeautifulSoup(catPage.read(), "html.parser")
+        for manufacturer in catPage_html.select_one(".filtru_tabula").findAll(
+            "a", href=True
+        ):
             manufacturer = manufacturer.text
             if manufacturer not in currentCats:
                 sql = "INSERT INTO sub_categories (main_categorie, category_filter, category_name, category_description, item_count, url) VALUES (%s, %s, %s, %s, %s, %s)"
@@ -781,7 +933,7 @@ def main():
                     continue
 
                 result = parse_ss_auto(adEntry["link"])
-                sql = f"INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
                     result["main_image"].replace("https:", ""),
                     result["description"][:254],
@@ -802,10 +954,8 @@ def main():
                 sleep(int(config["Configuration"]["pull_delay"]))
 
         # autoss
-        print(f"Checking autoss.lv feeds")
-        page = urllib.request.urlopen(
-            "http://autoss.eu/lv/automasinas?body=&make=&year_from=&year_to=&price_from=&price_to=&mileage_from=&mileage_to=&fuel=&power_from=&power_to=&transmission=&drive_type=&color=&location=&sort=new"
-        )
+        print("Checking autoss.lv feeds")
+        page = urllib.request.urlopen("http://autoss.eu/lv/automasinas?body=&make=&year_from=&year_to=&price_from=&price_to=&mileage_from=&mileage_to=&fuel=&power_from=&power_to=&transmission=&drive_type=&color=&location=&sort=new", timeout=10)
         if page.getcode() == 200:
             page_html = BeautifulSoup(page.read(), "html.parser")
             for elem in page_html.select(".table")[0].find_all("a")[1:]:
@@ -820,7 +970,7 @@ def main():
                     continue
 
                 result = parse_autoss(elem["href"])
-                sql = f"INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
                     result["main_image"].replace("https:", ""),
                     result["description"],
@@ -837,11 +987,14 @@ def main():
                 cursor.execute(sql, val)
                 db.commit()
 
+                print("Found and saved new entry: elem['href']")
+                sleep(int(config["Configuration"]["pull_delay"]))
+
         else:
             print("autoss returned", page.getcode())
 
         # zip.lv
-        print(f"Checking zip.lv feeds")
+        print("Checking zip.lv feeds")
 
         payload = '[["Items__Get",{"_t":48,"pg":1,"url":"/lv/transports/vieglie-auto/?pg=1"},{"Items__Item":["activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGrouped":["group","group2","place","place2","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGroupedPriced":["currency","group","group2","place","place2","price","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemFlat":["address","area","buildingType","coords","currency","features","floor","floors","period","place","place2","price","rooms","series","status","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemCar":["body","brand","color","country","currency","drive","engine","features","fuel","gearbox","gearCount","mileage","model","place","place2","price","ta","vin","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemHouse":["address","area","buildingType","coords","currency","features","floors","landArea","period","place","place2","price","rooms","status","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBike":["brand","currency","engine","model","place","place2","price","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemLand":["area","coords","currency","landType","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemOffice":["address","area","buildingType","coords","currency","floor","floors","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBicycle":["brand","currency","model","place","place2","price","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTruck":["brand","currency","engine","model","place","place2","price","vehicleType","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemJob":["companyName","companyRegNr","jobType","place","place2","position","workArea","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitled":["group","group2","place","place2","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitledPriced":["currency","group","group2","place","place2","price","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitledPlace":["currency","group","group2","place","place2","price","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemPriced":["currecny","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBuyGrouped":["group","group2","place","place2","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemFreeStuff":["group","group2","place","place2","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGroupedSell":["currency","group","group2","place","place2","price","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Categories__Item":["id","parentId","title","icon","isNew","isList","seoUrl","itemCount","meta","parentCategory"]}],["Filters__GetData",{"_t":89,"url":"/lv/transports/vieglie-auto/?pg=1"},{}],["Categories__GetCategory",{"_t":45,"id":69},{"Categories__Item":["id","parentId","title","icon","isNew","isList","seoUrl","itemCount","meta","parentCategory"]}]]'
         headers = {
@@ -861,7 +1014,7 @@ def main():
             data=payload.encode("ascii"),
             headers=headers,
         )
-        page = urllib.request.urlopen(req)
+        page = urllib.request.urlopen(req, timeout=10)
         if page.getcode() == 200:
             json_result = json.loads(page.read())
 
@@ -878,63 +1031,67 @@ def main():
                 if row_count > 0:
                     continue
 
-            listing_images = []
-            for image in json_result["images"]:
-                listing_images.append(
-                    {"title": "Image", "url": "http://" + image["original"]}
-                )
+                listing_images = []
+                for image in result["images"]:
+                    listing_images.append(
+                        {"title": "Image", "url": "http://" + image["original"]}
+                    )
 
                 result_object = {
-                    "crusty_car_data": [
-                        {
-                            "heading": "Marka",
-                            "item": json_result["brand"]["caption"],
-                        },
-                        {
-                            "heading": "Izlaiduma gads",  # "Year of manufacture"
-                            "item": json_result["year"],
-                        },
-                        {
-                            "heading": "Motors",
-                            "item": json_result["fuel"]["caption"],
-                        },
-                        {
-                            "heading": "Ātr.kārba",  # gearbox
-                            "item": json_result["gearbox"]["caption"],
-                        },
-                        {
-                            "heading": "Nobraukums, km",  # mileage
-                            "item": json_result["mileage"],
-                        },
-                        {
-                            "heading": "Krāsa",  # color
-                            "item": json_result["color"],
-                            "color": json_result["color"],
-                        },
-                        {
-                            "heading": "Virsūbes tips",  # body type
-                            "item": json_result["body"]["caption"],
-                        },
-                        {
-                            "heading": "Tehniskā skate",  # inspection date
-                            "item": "",
-                        },
-                    ],  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
+                    "crusty_car_data": json.dumps(
+                        [
+                            {
+                                "heading": "Marka",
+                                "item": result["brand"]["caption"],
+                            },
+                            {
+                                "heading": "Izlaiduma gads",  # "Year of manufacture"
+                                "item": result["year"],
+                            },
+                            {
+                                "heading": "Motors",
+                                "item": result["fuel"]["caption"],
+                            },
+                            {
+                                "heading": "Ātr.kārba",  # gearbox
+                                "item": result["gearbox"]["caption"],
+                            },
+                            {
+                                "heading": "Nobraukums, km",  # mileage
+                                "item": result["mileage"],
+                            },
+                            {
+                                "heading": "Krāsa",  # color
+                                "item": result["color"],
+                                "color": result["color"],
+                            },
+                            {
+                                "heading": "Virsūbes tips",  # body type
+                                "item": result["body"]["caption"],
+                            },
+                            {
+                                "heading": "Tehniskā skate",  # inspection date
+                                "item": "",
+                            },
+                        ]
+                    ),  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
                     "price": 0,
-                    "description": json_result["price"],
-                    "features": [x["caption"] for x in json_result["features"]],
-                    "phone": json_result["phone"],
-                    "listing_images": listing_images,
-                    "main_image": json_result["images"][0]["large"],
+                    "description": str(result["price"]),
+                    "features": json.dumps([x["caption"] for x in result["features"]]),
+                    "phone": result["phone"],
+                    "listing_images": json.dumps(listing_images),
+                    "main_image": result["images"][0]["large"],
                     "date": datetime.now().strftime("%d.%m.%Y"),
                     "time": datetime.now().strftime("%H:%M"),
-                    "subcat": json_result["brand"]["caption"],
+                    "subcat": result["brand"]["caption"],
                 }
 
-                sql = f"INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result_object["images"][0]["large"],
-                    result_object["text"][:254],
+                    result_object["images"][0]["large"]
+                    if "images" in result_object
+                    else "",
+                    result_object["description"][:254],
                     result_object["listing_images"],
                     result_object["price"],
                     f"https://zip.lv/lv/show/transports/vieglie-auto/?i={result['id']}",
@@ -948,10 +1105,15 @@ def main():
                 cursor.execute(sql, val)
                 db.commit()
 
+                print(
+                    f"Found and saved new entry: https://zip.lv/lv/show/transports/vieglie-auto/?i={result['id']}"
+                )
+                sleep(int(config["Configuration"]["pull_delay"]))
+
         else:
             print("zip.lv returned", page.getcode())
 
-        print(f"Checking mm.lv feeds")
+        print("Checking mm.lv feeds")
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0",
             "Accept": "*/*",
@@ -964,11 +1126,10 @@ def main():
             "Cache-Control": "max-age=0",
         }
         req = urllib.request.Request("https://mm.lv/vieglie-auto", headers=headers)
-        page = urllib.request.urlopen(req)
+        page = urllib.request.urlopen(req, timeout=10)
         if page.getcode() == 200:
             page_html = BeautifulSoup(page.read(), "html.parser")
             for elem in page_html.select("#listing-card-list")[0].find_all("a"):
-                result = parse_autoss(elem["href"])
                 cursor.execute(
                     "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
                     (elem["href"],),
@@ -980,7 +1141,7 @@ def main():
                     continue
 
                 result = parse_mm(elem["href"])
-                sql = f"INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
                     result["main_image"].replace("https:", ""),
                     result["description"],
@@ -996,6 +1157,9 @@ def main():
                 )
                 cursor.execute(sql, val)
                 db.commit()
+
+                print(f"Found and saved new entry: {elem['href']}")
+                sleep(int(config["Configuration"]["pull_delay"]))
 
         else:
             print("mm.lv returned", page.getcode())
@@ -1020,7 +1184,7 @@ def main():
                     continue
 
                 result = parse_reklama(adEntry["link"])
-                sql = f"INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
                     result["main_image"].replace("https:", ""),
                     result["description"],
@@ -1040,13 +1204,25 @@ def main():
                 print(f"Found and saved new entry: {adEntry['link']}")
                 sleep(int(config["Configuration"]["pull_delay"]))
 
-        print(f"Checking viss.lv feeds")
-        page = urllib.request.urlopen("http://viss.lv/lv/sludinajumi/c/13/")
+        print("Checking viss.lv feeds")
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0",
+            "Accept": "*/*",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Content-Type": "text/plain;charset=UTF-8",
+            "Origin": "http://viss.lv",
+            "DNT": "1",
+            "Connection": "keep-alive",
+            "Referer": "http://viss.lv",
+            "Cache-Control": "max-age=0",
+        }
+        req = urllib.request.Request("http://viss.lv/lv/sludinajumi/c/13/", headers=headers)
+        page = urllib.request.urlopen(req, timeout=10)
+
         if page.getcode() == 200:
             page_html = BeautifulSoup(page.read(), "html.parser")
             for elem in page_html.select_one(".slud_saraksta_tabula").find_all("a"):
                 href = "http://viss.lv" + elem["href"]
-                result = parse_viss(href)
                 cursor.execute(
                     "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
                     (href,),
@@ -1057,8 +1233,8 @@ def main():
                 if row_count > 0:
                     continue
 
-                result = parse_autoss(href)
-                sql = f"INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                result = parse_viss(href)
+                sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
                     result["main_image"].replace("https:", ""),
                     result["description"],
