@@ -355,7 +355,7 @@ def parse_autoss(url):
         return None
 
 
-def parse_mm(url):
+def parse_mm_auto(url):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0",
         "Accept": "*/*",
@@ -477,7 +477,7 @@ def parse_mm(url):
         return None
 
 
-def parse_reklama(url):
+def parse_reklama_auto(url):
     page = urllib.request.urlopen(url, timeout=10)
     if page.getcode() == 200:
         page_html = BeautifulSoup(page.read(), "html.parser")
@@ -591,7 +591,7 @@ def parse_reklama(url):
         return None
 
 
-def parse_elots(url):
+def parse_elots_auto(url):
     page = urllib.request.urlopen(url, timeout=10)
     if page.getcode() == 200:
         page_html = BeautifulSoup(page.read(), "html.parser")
@@ -704,7 +704,7 @@ def parse_elots(url):
         return None
 
 
-def parse_viss(url):
+def parse_viss_auto(url):
     page = urllib.request.urlopen(url, timeout=10)
     if page.getcode() == 200:
         page_html = BeautifulSoup(page.read(), "html.parser")
@@ -1056,45 +1056,76 @@ def main():
         # cursor = db.cursor()
         # cursor.execute(f"select * from {config['Configuration']['source_url_db']}")
         # sourceURLs = cursor.fetchall()
-        sourceURLs = [
-            "https://www.ss.com/lv/transport/cars/rss/",
-        ]
-        print(f"Checking {len(sourceURLs)} ss.lv feeds")
 
-        for feedUrl in sourceURLs:
-            rss = feedparser.parse(feedUrl)
+        print("Checking ss.lv feeds")
 
-            for adEntry in rss["entries"]:
-                cursor.execute(
-                    "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
-                    (adEntry["link"],),
-                )
-                query = cursor.fetchone()
-                # gets the number of rows affected by the command executed
-                row_count = cursor.rowcount
-                if row_count > 0:
-                    continue
+        # auto
+        rss = feedparser.parse("https://www.ss.com/lv/transport/cars/rss/")
+        for adEntry in rss["entries"]:
+            cursor.execute(
+                "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
+                (adEntry["link"],),
+            )
+            query = cursor.fetchone()
+            # gets the number of rows affected by the command executed
+            row_count = cursor.rowcount
+            if row_count > 0:
+                continue
 
-                result = parse_ss_auto(adEntry["link"])
-                sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-                val = (
-                    result["main_image"].replace("https:", ""),
-                    result["description"][:254],
-                    result["listing_images"],
-                    int(result["price"]),
-                    adEntry["link"],
-                    json.dumps(result["crusty_car_data"]),
-                    result["features"],
-                    None,
-                    result["date"],
-                    result["time"],
-                    currentCats[result["subcat"]],
-                )
-                cursor.execute(sql, val)
-                db.commit()
+            result = parse_ss_auto(adEntry["link"])
+            sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            val = (
+                result["main_image"].replace("https:", ""),
+                result["description"][:254],
+                result["listing_images"],
+                int(result["price"]),
+                adEntry["link"],
+                json.dumps(result["crusty_car_data"]),
+                result["features"],
+                None,
+                result["date"],
+                result["time"],
+                currentCats[result["subcat"]],
+            )
+            cursor.execute(sql, val)
+            db.commit()
 
-                print(f"Found and saved new entry: {adEntry['link']}")
-                sleep(int(config["Configuration"]["pull_delay"]))
+            print(f"Found and saved new entry: {adEntry['link']}")
+            sleep(int(config["Configuration"]["pull_delay"]))
+
+        # estate
+        rss = feedparser.parse("https://www.ss.com/lv/real-estate/rss/")
+        for adEntry in rss["entries"]:
+            cursor.execute(
+                "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
+                (adEntry["link"],),
+            )
+            query = cursor.fetchone()
+            # gets the number of rows affected by the command executed
+            row_count = cursor.rowcount
+            if row_count > 0:
+                continue
+
+            result = parse_ss_auto(adEntry["link"])
+            sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            val = (
+                result["main_image"].replace("https:", ""),
+                result["description"][:254],
+                result["listing_images"],
+                int(result["price"]),
+                adEntry["link"],
+                "[]",
+                "[]",
+                None,
+                result["date"],
+                result["time"],
+                163,
+            )
+            cursor.execute(sql, val)
+            db.commit()
+
+            print(f"Found and saved new entry: {adEntry['link']}")
+            sleep(int(config["Configuration"]["pull_delay"]))
 
         # autoss
         print("Checking autoss.lv feeds")
@@ -1106,7 +1137,7 @@ def main():
                     "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
                     (elem["href"],),
                 )
-                query = cursor.fetchone()
+                query = cursor.fetchone()  # noqa
                 # gets the number of rows affected by the command executed
                 row_count = cursor.rowcount
                 if row_count > 0:
@@ -1139,6 +1170,7 @@ def main():
         # zip.lv
         print("Checking zip.lv feeds")
 
+        # auto
         payload = '[["Items__Get",{"_t":48,"pg":1,"url":"/lv/transports/vieglie-auto/?pg=1"},{"Items__Item":["activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGrouped":["group","group2","place","place2","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGroupedPriced":["currency","group","group2","place","place2","price","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemFlat":["address","area","buildingType","coords","currency","features","floor","floors","period","place","place2","price","rooms","series","status","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemCar":["body","brand","color","country","currency","drive","engine","features","fuel","gearbox","gearCount","mileage","model","place","place2","price","ta","vin","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemHouse":["address","area","buildingType","coords","currency","features","floors","landArea","period","place","place2","price","rooms","status","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBike":["brand","currency","engine","model","place","place2","price","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemLand":["area","coords","currency","landType","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemOffice":["address","area","buildingType","coords","currency","floor","floors","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBicycle":["brand","currency","model","place","place2","price","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTruck":["brand","currency","engine","model","place","place2","price","vehicleType","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemJob":["companyName","companyRegNr","jobType","place","place2","position","workArea","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitled":["group","group2","place","place2","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitledPriced":["currency","group","group2","place","place2","price","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitledPlace":["currency","group","group2","place","place2","price","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemPriced":["currecny","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBuyGrouped":["group","group2","place","place2","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemFreeStuff":["group","group2","place","place2","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGroupedSell":["currency","group","group2","place","place2","price","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Categories__Item":["id","parentId","title","icon","isNew","isList","seoUrl","itemCount","meta","parentCategory"]}],["Filters__GetData",{"_t":89,"url":"/lv/transports/vieglie-auto/?pg=1"},{}],["Categories__GetCategory",{"_t":45,"id":69},{"Categories__Item":["id","parentId","title","icon","isNew","isList","seoUrl","itemCount","meta","parentCategory"]}]]'
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0",
@@ -1168,7 +1200,7 @@ def main():
                         f"https://zip.lv/lv/show/transports/vieglie-auto/?i={result['id']}",
                     ),
                 )
-                query = cursor.fetchone()
+                query = cursor.fetchone()  # noqa
                 # gets the number of rows affected by the command executed
                 row_count = cursor.rowcount
                 if row_count > 0:
@@ -1177,7 +1209,7 @@ def main():
                 listing_images = []
                 for image in result["images"]:
                     listing_images.append(
-                        {"title": "Image", "url": "http://" + image["original"]}
+                        {"title": "Image", "url": "http:" + image["original"]}
                     )
 
                 result_object = {
@@ -1218,8 +1250,8 @@ def main():
                             },
                         ]
                     ),  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
-                    "price": 0,
-                    "description": str(result["price"]),
+                    "price": str(result["price"]),
+                    "description": result["text"],
                     "features": json.dumps([x["caption"] for x in result["features"]]),
                     "phone": result["phone"],
                     "listing_images": json.dumps(listing_images),
@@ -1252,7 +1284,87 @@ def main():
                     f"Found and saved new entry: https://zip.lv/lv/show/transports/vieglie-auto/?i={result['id']}"
                 )
                 sleep(int(config["Configuration"]["pull_delay"]))
+        else:
+            print("zip.lv returned", page.getcode())
 
+        # estate
+        payload = '[["Items__Get",{"_t":48,"pg":1,"url":"/ru/nedvizhimost/kvartiri-prodaetsja/?pg=1"},{"Items__Item":["activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGrouped":["group","group2","place","place2","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGroupedPriced":["currency","group","group2","place","place2","price","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemFlat":["address","area","buildingType","coords","currency","features","floor","floors","period","place","place2","price","rooms","series","status","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemCar":["body","brand","color","country","currency","drive","engine","features","fuel","gearbox","gearCount","mileage","model","place","place2","price","ta","vin","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemHouse":["address","area","buildingType","coords","currency","features","floors","landArea","period","place","place2","price","rooms","status","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBike":["brand","currency","engine","model","place","place2","price","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemLand":["area","coords","currency","landType","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemOffice":["address","area","buildingType","coords","currency","floor","floors","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBicycle":["brand","currency","model","place","place2","price","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTruck":["brand","currency","engine","model","place","place2","price","vehicleType","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemJob":["companyName","companyRegNr","jobType","place","place2","position","workArea","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitled":["group","group2","place","place2","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitledPriced":["currency","group","group2","place","place2","price","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitledPlace":["currency","group","group2","place","place2","price","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemPriced":["currecny","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBuyGrouped":["group","group2","place","place2","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemFreeStuff":["group","group2","place","place2","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGroupedSell":["currency","group","group2","place","place2","price","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Categories__Item":["id","parentId","title","icon","isNew","isList","seoUrl","itemCount","meta","parentCategory"]}],["Filters__GetData",{"_t":89,"url":"/ru/nedvizhimost/kvartiri-prodaetsja/?pg=1"},{}],["Categories__GetCategory",{"_t":45,"id":63},{"Categories__Item":["id","parentId","title","icon","isNew","isList","seoUrl","itemCount","meta","parentCategory"]}]]'
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0",
+            "Accept": "*/*",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Content-Type": "text/plain;charset=UTF-8",
+            "Origin": "https://zip.lv",
+            "DNT": "1",
+            "Connection": "keep-alive",
+            "Referer": "https://zip.lv/ru/nedvizhimost/kvartiri-prodaetsja/?pg=1",
+            "Cache-Control": "max-age=0",
+            "TE": "Trailers",
+        }
+        req = urllib.request.Request(
+            "https://zip.lv/api/rpc.php?apikey&uid=0&lang=lv&m=Items__Get%2CFilters__GetData%2CCategories__GetCategory",
+            data=payload.encode("ascii"),
+            headers=headers,
+        )
+        page = urllib.request.urlopen(req, timeout=10)
+        if page.getcode() == 200:
+            json_result = json.loads(page.read())
+
+            for result in json_result[0][0]["items"]:
+                cursor.execute(
+                    "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
+                    (
+                        f"https://zip.lv/lv/show/transports/vieglie-auto/?i={result['id']}",
+                    ),
+                )
+                query = cursor.fetchone()  # noqa
+                # gets the number of rows affected by the command executed
+                row_count = cursor.rowcount
+                if row_count > 0:
+                    continue
+
+                listing_images = []
+                for image in result["images"]:
+                    listing_images.append(
+                        {"title": "Image", "url": "http:" + image["original"]}
+                    )
+
+                result_object = {
+                    "crusty_car_data": "[]",
+                    "price": str(result["price"]),
+                    "description": result["text"],
+                    "features": "[]",
+                    "phone": result["phone"],
+                    "listing_images": json.dumps(listing_images),
+                    "main_image": result["images"][0]["large"],
+                    "date": datetime.now().strftime("%d.%m.%Y"),
+                    "time": datetime.now().strftime("%H:%M"),
+                    "subcat": result["brand"]["caption"],
+                }
+
+                sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                val = (
+                    result_object["images"][0]["large"]
+                    if "images" in result_object
+                    else "",
+                    result_object["description"][:254],
+                    result_object["listing_images"],
+                    result_object["price"],
+                    f"https://zip.lv/lv/show/transports/vieglie-auto/?i={result['id']}",
+                    result_object["crusty_car_data"],
+                    result_object["features"],
+                    result_object["phone"],
+                    result_object["date"],
+                    result_object["time"],
+                    currentCats[result_object["subcat"]],
+                )
+                cursor.execute(sql, val)
+                db.commit()
+
+                print(
+                    f"Found and saved new entry: https://zip.lv/lv/show/transports/vieglie-auto/?i={result['id']}"
+                )
+                sleep(int(config["Configuration"]["pull_delay"]))
         else:
             print("zip.lv returned", page.getcode())
 
@@ -1277,13 +1389,13 @@ def main():
                     "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
                     (elem["href"],),
                 )
-                query = cursor.fetchone()
+                query = cursor.fetchone()  # noqa
                 # gets the number of rows affected by the command executed
                 row_count = cursor.rowcount
                 if row_count > 0:
                     continue
 
-                result = parse_mm(elem["href"])
+                result = parse_mm_auto(elem["href"])
                 sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
                     result["main_image"].replace("https:", ""),
@@ -1320,13 +1432,13 @@ def main():
                     "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
                     (adEntry["link"],),
                 )
-                query = cursor.fetchone()
+                query = cursor.fetchone()  # noqa
                 # gets the number of rows affected by the command executed
                 row_count = cursor.rowcount
                 if row_count > 0:
                     continue
 
-                result = parse_reklama(adEntry["link"])
+                result = parse_reklama_auto(adEntry["link"])
                 sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
                     result["main_image"].replace("https:", ""),
@@ -1359,13 +1471,13 @@ def main():
                     "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
                     (elem['href'],),
                 )
-                query = cursor.fetchone()
+                query = cursor.fetchone()  # noqa
                 # gets the number of rows affected by the command executed
                 row_count = cursor.rowcount
                 if row_count > 0:
                     continue
 
-                result = parse_elots(elem['href'])
+                result = parse_elots_auto(elem['href'])
                 sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
                     result["main_image"].replace("https:", ""),
@@ -1409,13 +1521,13 @@ def main():
                     "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
                     (href,),
                 )
-                query = cursor.fetchone()
+                query = cursor.fetchone()  # noqa
                 # gets the number of rows affected by the command executed
                 row_count = cursor.rowcount
                 if row_count > 0:
                     continue
 
-                result = parse_viss(href)
+                result = parse_viss_auto(href)
                 sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
                     result["main_image"].replace("https:", ""),
