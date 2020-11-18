@@ -61,23 +61,19 @@ def parse_ss_auto(url):
                 "price": price or 0,
                 "year": bsFind(page_html, "td", {"id": "tdo_18"}) or 0,
                 "engine": bsFind(page_html, "td", {"id": "tdo_15"}),
-                "transmission": bsFind(page_html, "td", {"id": "tdo_35"}),
+                "transmision": bsFind(page_html, "td", {"id": "tdo_35"}),
                 "mileage": bsFind(page_html, "td", {"id": "tdo_16"}) or 0,
                 "colour": bsFind(page_html, "td", {"id": "tdo_17"}, "color"),
                 "type": bsFind(page_html, "td", {"id": "tdo_32"}),
                 "technical_inspection": bsFind(page_html, "td", {"id": "tdo_223"}),
                 "main_data": "",
-                "options_data": parse_car_feature_list(
-                    page_html.findAll("td", "auto_c_column")
-                ),
+                "options_data": parse_car_feature_list(page_html.findAll("td", "auto_c_column")),
                 "original_url": url,
-                "contact_data": bsFind(page_html, "span", {"id": "phone_td_1"}, "contents", 0)
-                + " "
-                + bsFind(page_html, "span", {"id": "phone_td_1"}, "contents", 1),
-                "date": bsFind(page_html, "td", {"class": "msg_footer"}, type="date"),
-                "time": bsFind(page_html, "td", {"class": "msg_footer"}, type="time"),
-                "model": bsFind(page_html, "td", {"id": "tdo_31"}),
+                "contact_data": bsFind(page_html, "span", {"id": "phone_td_1"}, "contents", 0) + " " + bsFind(page_html, "span", {"id": "phone_td_1"}, "contents", 1),
+                "post_in_data": bsFind(page_html, "td", {"class": "msg_footer"}, type="date"),
+                "post_in_time": bsFind(page_html, "td", {"class": "msg_footer"}, type="time"),
                 "subcat": bsFind(page_html, "", type="subcat"),
+                "model": bsFind(page_html, "td", {"id": "tdo_31"}),
             }
         except AttributeError as e:
             print(f"Error while parsing {url}, ss.com might've changed format: {e}")
@@ -159,93 +155,26 @@ def parse_autoss(url):
                 pass
 
         result_object = {
-            "crusty_car_data": [],
-            "price": 0,
-            "description": "",
-            "model": None,
-            "year": None,
-            "engine": None,
-            "transmission": None,
-            "mileage": None,
-            "colour": None,
-            "type": None,
-            "technical_inspection": None,
-            "vin": None,  # not implemented
-            "plate_no": None,  # not implemented
-            "options_data": "[]",
-            "contact_data": None,
-            "images": None,
             "thumbnail": "",
-            "date": datetime.now().strftime("%d.%m.%Y"),
-            "time": datetime.now().strftime("%H:%M"),
-            "subcat": None,
+            "description": "",
+            "images": "",
+            "price": 0,
+            "year": 0,
+            "engine": "",
+            "transmision": "",
+            "mileage": 0,
+            "colour": "",
+            "type": "",
+            "technical_inspection": "",
+            "main_data": "",
+            "options_data": "",
+            "original_url": "",
+            "contact_data": "",
+            "post_in_data": datetime.now().strftime("%d.%m.%Y"),
+            "post_in_time": datetime.now().strftime("%H:%M"),
+            "subcat": "Cits",
+            "model": "",
         }
-
-        result_object["crusty_car_data"].append(
-            [
-                {
-                    "heading": "Marka",
-                    "item": page_html.select(".is-active")[0].text,
-                },
-            ]
-        )
-        result_object["crusty_car_data"].append(
-            [
-                {
-                    "heading": "Izlaiduma gads",
-                    "item": infotable["Pirmā reģistrācija"].split("/")[-1],
-                },
-            ]
-        )
-        result_object["crusty_car_data"].append(
-            [
-                {
-                    "heading": "Motors",
-                    "item": infotable["Degviela"],
-                },
-            ]
-        )
-        result_object["crusty_car_data"].append(
-            [
-                {
-                    "heading": "Ātr.kārba",
-                    "item": infotable["Pārnesumkārba"],
-                },
-            ]
-        )
-        result_object["crusty_car_data"].append(
-            [
-                {
-                    "heading": "Nobraukums, km",
-                    "item": infotable["Nobraukums (km)"],
-                },
-            ]
-        )
-        result_object["crusty_car_data"].append(
-            [
-                {
-                    "heading": "Krāsa",
-                    "item": infotable["Krāsa"],
-                    "color": infotable["Krāsa"],
-                },
-            ]
-        )
-        result_object["crusty_car_data"].append(
-            [
-                {
-                    "heading": "Virsūbes tips",
-                    "item": infotable["Virsbūves tips"],
-                },
-            ]
-        )
-        result_object["crusty_car_data"].append(
-            [
-                {
-                    "heading": "Tehniskā skate",
-                    "item": "",
-                },
-            ]
-        )
 
         try:
             result_object["price"] = "".join(
@@ -274,7 +203,7 @@ def parse_autoss(url):
         except:
             pass
         try:
-            result_object["transmission"] = infotable["Pārnesumkārba"]
+            result_object["transmision"] = infotable["Pārnesumkārba"]
         except:
             pass
         try:
@@ -333,67 +262,26 @@ def parse_mm_auto(url):
             images.append({"title": "Image", "url": image["src"]})
 
         result_object = {
-            "crusty_car_data": [
-                {
-                    "heading": "Izlaiduma gads",  # "Year of manufacture"
-                    "item": "",
-                },
-                {
-                    "heading": "Motors",
-                    "item": "",
-                },
-                {
-                    "heading": "Ātr.kārba",  # gearbox
-                    "item": "",
-                },
-                {
-                    "heading": "Nobraukums, km",  # mileage
-                    "item": "",
-                },
-                {
-                    "heading": "Krāsa",  # color
-                    "item": "",
-                    "color": "",
-                },
-                {
-                    "heading": "Virsūbes tips",  # body type
-                    "item": "",
-                },
-                {
-                    "heading": "Tehniskā skate",  # inspection date
-                    "item": "",
-                },
-            ],  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
-            "price": 0,
-            "description": "",
-            "options_data": "[]",
-            "contact_data": "",
-            "images": "",
             "thumbnail": "",
-            "date": datetime.now().strftime("%d.%m.%Y"),
-            "time": datetime.now().strftime("%H:%M"),
+            "description": "",
+            "images": "",
+            "price": 0,
+            "year": 0,
+            "engine": "",
+            "transmision": "",
+            "mileage": 0,
+            "colour": "",
+            "type": "",
+            "technical_inspection": "",
+            "main_data": "",
+            "options_data": "",
+            "original_url": "",
+            "contact_data": "",
+            "post_in_data": datetime.now().strftime("%d.%m.%Y"),
+            "post_in_time": datetime.now().strftime("%H:%M"),
             "subcat": "Cits",
+            "model": "",
         }
-        try:
-            result_object["crusty_car_data"].append(
-                [
-                    {
-                        "heading": "Marka",
-                        "item": page_html.select_one(".breadcrumb")
-                        .find("li", {"class": "penult"})
-                        .text,
-                    },
-                ]
-            )
-        except:
-            result_object["crusty_car_data"].append(
-                [
-                    {
-                        "heading": "Marka",
-                        "item": "",
-                    },
-                ]
-            )
 
         try:
             result_object["price"] = "".join(
@@ -460,50 +348,25 @@ def parse_reklama_auto(url):
 
         try:
             result_object = {
-                "crusty_car_data": [
-                    {
-                        "heading": "Marka",
-                        "item": infotable["Marka"],
-                    },
-                    {
-                        "heading": "Izlaiduma gads",  # "Year of manufacture"
-                        "item": infotable["Gads"],
-                    },
-                    {
-                        "heading": "Motors",
-                        "item": infotable["Dzin."],
-                    },
-                    {
-                        "heading": "Ātr.kārba",  # gearbox
-                        "item": infotable["Pārnesumkārba:"],
-                    },
-                    {
-                        "heading": "Nobraukums, km",  # mileage
-                        "item": infotable["Nobraukums"],
-                    },
-                    {
-                        "heading": "Krāsa",  # color
-                        "item": infotable["Krāsa"],
-                        "color": "",
-                    },
-                    {
-                        "heading": "Virsūbes tips",  # body type
-                        "item": infotable["Virsbūve"],
-                    },
-                    {
-                        "heading": "Tehniskā skate",  # inspection date
-                        "item": "",
-                    },
-                ],  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
-                "price": 0,
-                "description": "",
-                "options_data": "[]",
-                "contact_data": "",
-                "images": "",
                 "thumbnail": "",
-                "date": datetime.now().strftime("%d.%m.%Y"),
-                "time": datetime.now().strftime("%H:%M"),
+                "description": "",
+                "images": "",
+                "price": 0,
+                "year": 0,
+                "engine": "",
+                "transmision": "",
+                "mileage": 0,
+                "colour": "",
+                "type": "",
+                "technical_inspection": "",
+                "main_data": "",
+                "options_data": "",
+                "original_url": "",
+                "contact_data": "",
+                "post_in_data": datetime.now().strftime("%d.%m.%Y"),
+                "post_in_time": datetime.now().strftime("%H:%M"),
                 "subcat": "Cits",
+                "model": "",
             }
         except AttributeError as e:
             print(
@@ -575,50 +438,25 @@ def parse_elots_auto(url):
 
         try:
             result_object = {
-                "crusty_car_data": [
-                    {
-                        "heading": "Marka",
-                        "item": infotable["Automašīnas zīmols"],
-                    },
-                    {
-                        "heading": "Izlaiduma gads",  # "Year of manufacture"
-                        "item": infotable["Reģistrācijas gads"],
-                    },
-                    {
-                        "heading": "Motors",
-                        "item": "",
-                    },
-                    {
-                        "heading": "Ātr.kārba",  # gearbox
-                        "item": infotable["Pārnesumu kārba"],
-                    },
-                    {
-                        "heading": "Nobraukums, km",  # mileage
-                        "item": infotable["Nobraukums"],
-                    },
-                    {
-                        "heading": "Krāsa",  # color
-                        "item": "",
-                        "color": "",
-                    },
-                    {
-                        "heading": "Virsūbes tips",  # body type
-                        "item": "",
-                    },
-                    {
-                        "heading": "Tehniskā skate",  # inspection date
-                        "item": "",
-                    },
-                ],  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
-                "price": 0,
-                "description": "",
-                "options_data": "[]",
-                "contact_data": "",
-                "images": "",
                 "thumbnail": "",
-                "date": datetime.now().strftime("%d.%m.%Y"),
-                "time": datetime.now().strftime("%H:%M"),
+                "description": "",
+                "images": "",
+                "price": 0,
+                "year": 0,
+                "engine": "",
+                "transmision": "",
+                "mileage": 0,
+                "colour": "",
+                "type": "",
+                "technical_inspection": "",
+                "main_data": "",
+                "options_data": "",
+                "original_url": "",
+                "contact_data": "",
+                "post_in_data": datetime.now().strftime("%d.%m.%Y"),
+                "post_in_time": datetime.now().strftime("%H:%M"),
                 "subcat": "Cits",
+                "model": "",
             }
         except AttributeError as e:
             print(
@@ -691,51 +529,25 @@ def parse_viss_auto(url):
 
         try:
             result_object = {
-                "crusty_car_data": [
-                    {
-                        "heading": "Marka",
-                        "item": infotable["Auto marka:"],
-                    },
-                    {
-                        "heading": "Izlaiduma gads",  # "Year of manufacture"
-                        "item": infotable["Izlaiduma gads:"],
-                    },
-                    {
-                        "heading": "Motors",
-                        "item": infotable["Motora tilpums:"]
-                        + infotable["Degvielas veids:"],
-                    },
-                    {
-                        "heading": "Ātr.kārba",  # gearbox
-                        "item": infotable["Atrumkārba:"],
-                    },
-                    {
-                        "heading": "Nobraukums, km",  # mileage
-                        "item": infotable["Nobraukums (km):"],
-                    },
-                    {
-                        "heading": "Krāsa",  # color
-                        "item": infotable["Krāsa:"],
-                        "color": "",
-                    },
-                    {
-                        "heading": "Virsūbes tips",  # body type
-                        "item": infotable["Virsbūves tips:"],
-                    },
-                    {
-                        "heading": "Tehniskā skate",  # inspection date
-                        "item": "",
-                    },
-                ],  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
-                "price": 0,
-                "description": "",
-                "options_data": "[]",
-                "contact_data": "",
-                "images": "",
                 "thumbnail": "",
-                "date": datetime.now().strftime("%d.%m.%Y"),
-                "time": datetime.now().strftime("%H:%M"),
+                "description": "",
+                "images": "",
+                "price": 0,
+                "year": 0,
+                "engine": "",
+                "transmision": "",
+                "mileage": 0,
+                "colour": "",
+                "type": "",
+                "technical_inspection": "",
+                "main_data": "",
+                "options_data": "",
+                "original_url": "",
+                "contact_data": "",
+                "post_in_data": datetime.now().strftime("%d.%m.%Y"),
+                "post_in_time": datetime.now().strftime("%H:%M"),
                 "subcat": "Cits",
+                "model": "",
             }
         except AttributeError as e:
             print(
@@ -1032,17 +844,25 @@ def main():
             result = parse_ss_auto(adEntry["link"])
             sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             val = (
-                result["thumbnail"].replace("https:", ""),
-                result["description"][:254],
+                result["thumbnail"],
+                result["description"],
                 result["images"],
-                int(result["price"]),
-                adEntry["link"],
-                json.dumps(result["crusty_car_data"]),
+                result["price"],
+                result["year"],
+                result["engine"],
+                result["transmision"],
+                result["mileage"],
+                result["colour"],
+                result["type"],
+                result["technical_inspection"],
+                result["main_data"],
                 result["options_data"],
-                None,
-                result["date"],
-                result["time"],
-                currentCats[result["subcat"]],
+                result["original_url"],
+                result["contact_data"],
+                result["post_in_data"],
+                result["post_in_time"],
+                result["subcat"],
+                result["model"],
             )
             cursor.execute(sql, val)
             db.commit()
@@ -1066,17 +886,25 @@ def main():
             result = parse_ss_auto(adEntry["link"])
             sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             val = (
-                result["thumbnail"].replace("https:", ""),
-                result["description"][:254],
+                result["thumbnail"],
+                result["description"],
                 result["images"],
-                int(result["price"]),
-                adEntry["link"],
-                "[]",
-                "[]",
-                None,
-                result["date"],
-                result["time"],
-                163,
+                result["price"],
+                result["year"],
+                result["engine"],
+                result["transmision"],
+                result["mileage"],
+                result["colour"],
+                result["type"],
+                result["technical_inspection"],
+                result["main_data"],
+                result["options_data"],
+                result["original_url"],
+                result["contact_data"],
+                result["post_in_data"],
+                result["post_in_time"],
+                result["subcat"],
+                result["model"],
             )
             cursor.execute(sql, val)
             db.commit()
@@ -1101,19 +929,27 @@ def main():
                     continue
 
                 result = parse_autoss(elem["href"])
-                sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                sql = "INSERT INTO category_data (thumbnail, description, images, price, year, engine, transmision, mileage, colour, body_type, technical_inspection, main_data, options_data, original_url, contact_data, post_in_data, post_in_time, subcat, model) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result["thumbnail"].replace("https:", ""),
+                    result["thumbnail"],
                     result["description"],
                     result["images"],
-                    int(result["price"]),
-                    elem["href"],
-                    json.dumps(result["crusty_car_data"]),
+                    result["price"],
+                    result["year"],
+                    result["engine"],
+                    result["transmision"],
+                    result["mileage"],
+                    result["colour"],
+                    result["type"],
+                    result["technical_inspection"],
+                    result["main_data"],
                     result["options_data"],
-                    None,
-                    result["date"],
-                    result["time"],
-                    currentCats[result["subcat"]],
+                    result["original_url"],
+                    result["contact_data"],
+                    result["post_in_data"],
+                    result["post_in_time"],
+                    result["subcat"],
+                    result["model"],
                 )
                 cursor.execute(sql, val)
                 db.commit()
@@ -1170,69 +1006,47 @@ def main():
                     )
 
                 result_object = {
-                    "crusty_car_data": json.dumps(
-                        [
-                            {
-                                "heading": "Marka",
-                                "item": result["brand"]["caption"],
-                            },
-                            {
-                                "heading": "Izlaiduma gads",  # "Year of manufacture"
-                                "item": result["year"],
-                            },
-                            {
-                                "heading": "Motors",
-                                "item": result["fuel"]["caption"],
-                            },
-                            {
-                                "heading": "Ātr.kārba",  # gearbox
-                                "item": result["gearbox"]["caption"],
-                            },
-                            {
-                                "heading": "Nobraukums, km",  # mileage
-                                "item": result["mileage"],
-                            },
-                            {
-                                "heading": "Krāsa",  # color
-                                "item": result["color"],
-                                "color": result["color"],
-                            },
-                            {
-                                "heading": "Virsūbes tips",  # body type
-                                "item": result["body"]["caption"],
-                            },
-                            {
-                                "heading": "Tehniskā skate",  # inspection date
-                                "item": "",
-                            },
-                        ]
-                    ),  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
-                    "price": str(result["price"]),
-                    "description": result["text"],
-                    "options_data": json.dumps([x["caption"] for x in result["options_data"]]),
-                    "contact_data": result["contact_data"],
-                    "images": json.dumps(images),
-                    "thumbnail": result["images"][0]["large"],
-                    "date": datetime.now().strftime("%d.%m.%Y"),
-                    "time": datetime.now().strftime("%H:%M"),
-                    "subcat": result["brand"]["caption"],
+                    "thumbnail": "",
+                    "description": "",
+                    "images": "",
+                    "price": 0,
+                    "year": 0,
+                    "engine": "",
+                    "transmision": "",
+                    "mileage": 0,
+                    "colour": "",
+                    "type": "",
+                    "technical_inspection": "",
+                    "main_data": "",
+                    "options_data": "",
+                    "original_url": "",
+                    "contact_data": "",
+                    "post_in_data": datetime.now().strftime("%d.%m.%Y"),
+                    "post_in_time": datetime.now().strftime("%H:%M"),
+                    "subcat": "Cits",
+                    "model": "",
                 }
-
                 sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result_object["images"][0]["large"]
-                    if "images" in result_object
-                    else "",
-                    result_object["description"][:254],
-                    result_object["images"],
-                    result_object["price"],
-                    f"https://zip.lv/lv/show/transports/vieglie-auto/?i={result['id']}",
-                    result_object["crusty_car_data"],
-                    result_object["options_data"],
-                    result_object["contact_data"],
-                    result_object["date"],
-                    result_object["time"],
-                    currentCats[result_object["subcat"]],
+                    result["thumbnail"],
+                    result["description"],
+                    result["images"],
+                    result["price"],
+                    result["year"],
+                    result["engine"],
+                    result["transmision"],
+                    result["mileage"],
+                    result["colour"],
+                    result["type"],
+                    result["technical_inspection"],
+                    result["main_data"],
+                    result["options_data"],
+                    result["original_url"],
+                    result["contact_data"],
+                    result["post_in_data"],
+                    result["post_in_time"],
+                    result["subcat"],
+                    result["model"],
                 )
                 cursor.execute(sql, val)
                 db.commit()
@@ -1287,33 +1101,47 @@ def main():
                     )
 
                 result_object = {
-                    "crusty_car_data": "[]",
-                    "price": str(result["price"]),
-                    "description": result["text"],
-                    "options_data": "[]",
-                    "contact_data": result["contact_data"],
-                    "images": json.dumps(images),
-                    "thumbnail": result["images"][0]["large"],
-                    "date": datetime.now().strftime("%d.%m.%Y"),
-                    "time": datetime.now().strftime("%H:%M"),
-                    "subcat": result["brand"]["caption"],
+                    "thumbnail": "",
+                    "description": "",
+                    "images": "",
+                    "price": 0,
+                    "year": 0,
+                    "engine": "",
+                    "transmision": "",
+                    "mileage": 0,
+                    "colour": "",
+                    "type": "",
+                    "technical_inspection": "",
+                    "main_data": "",
+                    "options_data": "",
+                    "original_url": "",
+                    "contact_data": "",
+                    "post_in_data": datetime.now().strftime("%d.%m.%Y"),
+                    "post_in_time": datetime.now().strftime("%H:%M"),
+                    "subcat": "Cits",
+                    "model": "",
                 }
-
                 sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result_object["images"][0]["large"]
-                    if "images" in result_object
-                    else "",
-                    result_object["description"][:254],
-                    result_object["images"],
-                    result_object["price"],
-                    f"https://zip.lv/lv/show/transports/vieglie-auto/?i={result['id']}",
-                    result_object["crusty_car_data"],
-                    result_object["options_data"],
-                    result_object["contact_data"],
-                    result_object["date"],
-                    result_object["time"],
-                    currentCats[result_object["subcat"]],
+                    result["thumbnail"],
+                    result["description"],
+                    result["images"],
+                    result["price"],
+                    result["year"],
+                    result["engine"],
+                    result["transmision"],
+                    result["mileage"],
+                    result["colour"],
+                    result["type"],
+                    result["technical_inspection"],
+                    result["main_data"],
+                    result["options_data"],
+                    result["original_url"],
+                    result["contact_data"],
+                    result["post_in_data"],
+                    result["post_in_time"],
+                    result["subcat"],
+                    result["model"],
                 )
                 cursor.execute(sql, val)
                 db.commit()
@@ -1355,17 +1183,25 @@ def main():
                 result = parse_mm_auto(elem["href"])
                 sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result["thumbnail"].replace("https:", ""),
+                    result["thumbnail"],
                     result["description"],
                     result["images"],
-                    int(result["price"]),
-                    elem["href"],
-                    json.dumps(result["crusty_car_data"]),
+                    result["price"],
+                    result["year"],
+                    result["engine"],
+                    result["transmision"],
+                    result["mileage"],
+                    result["colour"],
+                    result["type"],
+                    result["technical_inspection"],
+                    result["main_data"],
                     result["options_data"],
-                    None,
-                    result["date"],
-                    result["time"],
-                    currentCats[result["subcat"]],
+                    result["original_url"],
+                    result["contact_data"],
+                    result["post_in_data"],
+                    result["post_in_time"],
+                    result["subcat"],
+                    result["model"],
                 )
                 cursor.execute(sql, val)
                 db.commit()
@@ -1398,17 +1234,25 @@ def main():
                 result = parse_reklama_auto(adEntry["link"])
                 sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result["thumbnail"].replace("https:", ""),
+                    result["thumbnail"],
                     result["description"],
                     result["images"],
-                    int(result["price"]),
-                    adEntry["link"],
-                    json.dumps(result["crusty_car_data"]),
+                    result["price"],
+                    result["year"],
+                    result["engine"],
+                    result["transmision"],
+                    result["mileage"],
+                    result["colour"],
+                    result["type"],
+                    result["technical_inspection"],
+                    result["main_data"],
                     result["options_data"],
-                    None,
-                    result["date"],
-                    result["time"],
-                    currentCats[result["subcat"]],
+                    result["original_url"],
+                    result["contact_data"],
+                    result["post_in_data"],
+                    result["post_in_time"],
+                    result["subcat"],
+                    result["model"],
                 )
                 cursor.execute(sql, val)
                 db.commit()
@@ -1437,17 +1281,25 @@ def main():
                 result = parse_elots_auto(elem['href'])
                 sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result["thumbnail"].replace("https:", ""),
+                    result["thumbnail"],
                     result["description"],
                     result["images"],
-                    int(result["price"]),
-                    elem['href'],
-                    json.dumps(result["crusty_car_data"]),
+                    result["price"],
+                    result["year"],
+                    result["engine"],
+                    result["transmision"],
+                    result["mileage"],
+                    result["colour"],
+                    result["type"],
+                    result["technical_inspection"],
+                    result["main_data"],
                     result["options_data"],
-                    None,
-                    result["date"],
-                    result["time"],
-                    currentCats[result["subcat"]],
+                    result["original_url"],
+                    result["contact_data"],
+                    result["post_in_data"],
+                    result["post_in_time"],
+                    result["subcat"],
+                    result["model"],
                 )
                 cursor.execute(sql, val)
                 db.commit()
@@ -1487,17 +1339,25 @@ def main():
                 result = parse_viss_auto(href)
                 sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result["thumbnail"].replace("https:", ""),
+                    result["thumbnail"],
                     result["description"],
                     result["images"],
-                    int(result["price"]),
-                    href,
-                    json.dumps(result["crusty_car_data"]),
+                    result["price"],
+                    result["year"],
+                    result["engine"],
+                    result["transmision"],
+                    result["mileage"],
+                    result["colour"],
+                    result["type"],
+                    result["technical_inspection"],
+                    result["main_data"],
                     result["options_data"],
-                    None,
-                    result["date"],
-                    result["time"],
-                    currentCats[result["subcat"]],
+                    result["original_url"],
+                    result["contact_data"],
+                    result["post_in_data"],
+                    result["post_in_time"],
+                    result["subcat"],
+                    result["model"],
                 )
                 cursor.execute(sql, val)
                 db.commit()
