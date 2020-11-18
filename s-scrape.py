@@ -36,53 +36,11 @@ def parse_ss_auto(url):
     if page.getcode() == 200:
         page_html = BeautifulSoup(page.read(), "html.parser")
 
-        listing_images = []
+        images = []
         for image in page_html.find_all("img", attrs={"class": "isfoto"}):
-            listing_images.append(
+            images.append(
                 {"title": "Image", "url": image["src"].replace(".t.", ".800.")}
             )
-
-        try:
-            crusty_car_data = [
-                {
-                    "heading": "Marka",
-                    "item": bsFind(page_html, "td", {"id": "tdo_31"}),
-                },
-                {
-                    "heading": "Izlaiduma gads",
-                    "item": bsFind(page_html, "td", {"id": "tdo_18"}),
-                },
-                {
-                    "heading": "Motors",
-                    "item": bsFind(page_html, "td", {"id": "tdo_15"}),
-                },
-                {
-                    "heading": "Ātr.kārba",
-                    "item": bsFind(page_html, "td", {"id": "tdo_35"}),
-                },
-                {
-                    "heading": "Nobraukums, km",
-                    "item": bsFind(page_html, "td", {"id": "tdo_16"}),
-                },
-                {
-                    "heading": "Krāsa",
-                    "item": bsFind(page_html, "td", {"id": "tdo_17"}, "color"),
-                    "color": bsFind(page_html, "td", {"id": "tdo_17"}, "color"),
-                },
-                {
-                    "heading": "Virsūbes tips",
-                    "item": bsFind(page_html, "td", {"id": "tdo_32"}),
-                },
-                {
-                    "heading": "Tehniskā skate",
-                    "item": bsFind(page_html, "td", {"id": "tdo_223"}),
-                },
-            ]
-        except AttributeError as e:
-            print(
-                f"Error while parsing C-data in {url}, ss.com might've changed format: {e}"
-            )
-            crusty_car_data = []
 
         try:
             price = "".join(
@@ -91,35 +49,34 @@ def parse_ss_auto(url):
         except:
             price = 0
         try:
-            main_image = listing_images[0]["url"]
+            thumbnail = images[0]["url"]
         except:
-            main_image = ""
+            thumbnail = ""
 
         try:
             return {
-                "crusty_car_data": crusty_car_data,
-                "price": price,
+                "thumbnail": thumbnail,
                 "description": bsFind(page_html, "", type="description"),
-                "model": bsFind(page_html, "td", {"id": "tdo_31"}),
-                "year": bsFind(page_html, "td", {"id": "tdo_18"}),
+                "images": json.dumps(images),
+                "price": price or 0,
+                "year": bsFind(page_html, "td", {"id": "tdo_18"}) or 0,
                 "engine": bsFind(page_html, "td", {"id": "tdo_15"}),
                 "transmission": bsFind(page_html, "td", {"id": "tdo_35"}),
-                "km_travelled": bsFind(page_html, "td", {"id": "tdo_16"}),
-                "color_hex": bsFind(page_html, "td", {"id": "tdo_17"}, "color"),
+                "mileage": bsFind(page_html, "td", {"id": "tdo_16"}) or 0,
+                "colour": bsFind(page_html, "td", {"id": "tdo_17"}, "color"),
                 "type": bsFind(page_html, "td", {"id": "tdo_32"}),
-                "inspection_until": bsFind(page_html, "td", {"id": "tdo_223"}),
-                "vin": None,  # not implemented
-                "plate_no": None,  # not implemented
-                "features": parse_car_feature_list(
+                "technical_inspection": bsFind(page_html, "td", {"id": "tdo_223"}),
+                "main_data": "",
+                "options_data": parse_car_feature_list(
                     page_html.findAll("td", "auto_c_column")
                 ),
-                "phone": bsFind(page_html, "span", {"id": "phone_td_1"}, "contents", 0)
+                "original_url": url,
+                "contact_data": bsFind(page_html, "span", {"id": "phone_td_1"}, "contents", 0)
                 + " "
                 + bsFind(page_html, "span", {"id": "phone_td_1"}, "contents", 1),
-                "listing_images": json.dumps(listing_images),
-                "main_image": main_image,
                 "date": bsFind(page_html, "td", {"class": "msg_footer"}, type="date"),
                 "time": bsFind(page_html, "td", {"class": "msg_footer"}, type="time"),
+                "model": bsFind(page_html, "td", {"id": "tdo_31"}),
                 "subcat": bsFind(page_html, "", type="subcat"),
             }
         except AttributeError as e:
@@ -179,11 +136,11 @@ def parse_autoss(url):
     page = urllib.request.urlopen(url, timeout=10)
     if page.getcode() == 200:
         page_html = BeautifulSoup(page.read(), "html.parser")
-        listing_images = []
+        images = []
         for image in page_html.find_all("div", attrs={"class": "is-5"})[0].find_all(
             "img"
         ):
-            listing_images.append({"title": "Image", "url": image["src"]})
+            images.append({"title": "Image", "url": image["src"]})
 
         table = page_html.find("table")
         infotable = {
@@ -209,16 +166,16 @@ def parse_autoss(url):
             "year": None,
             "engine": None,
             "transmission": None,
-            "km_travelled": None,
-            "color_hex": None,
+            "mileage": None,
+            "colour": None,
             "type": None,
-            "inspection_until": None,
+            "technical_inspection": None,
             "vin": None,  # not implemented
             "plate_no": None,  # not implemented
-            "features": "[]",
-            "phone": None,
-            "listing_images": None,
-            "main_image": "",
+            "options_data": "[]",
+            "contact_data": None,
+            "images": None,
+            "thumbnail": "",
             "date": datetime.now().strftime("%d.%m.%Y"),
             "time": datetime.now().strftime("%H:%M"),
             "subcat": None,
@@ -297,7 +254,7 @@ def parse_autoss(url):
         except:
             pass
         try:
-            result_object["main_image"] = listing_images[0]["url"]
+            result_object["thumbnail"] = images[0]["url"]
         except:
             pass
         try:
@@ -321,11 +278,11 @@ def parse_autoss(url):
         except:
             pass
         try:
-            result_object["km_travelled"] = infotable["Nobraukums (km)"]
+            result_object["mileage"] = infotable["Nobraukums (km)"]
         except:
             pass
         try:
-            result_object["color_hex"] = infotable["Krāsa"]
+            result_object["colour"] = infotable["Krāsa"]
         except:
             pass
         try:
@@ -333,13 +290,13 @@ def parse_autoss(url):
         except:
             pass
         try:
-            result_object["phone"] = "".join(
+            result_object["contact_data"] = "".join(
                 i for i in page_html.select(".is-7")[0].text[-36:] if i.isdigit()
             )
         except:
             pass
         try:
-            result_object["listing_images"] = json.dumps(listing_images)
+            result_object["images"] = json.dumps(images)
         except:
             pass
         try:
@@ -371,9 +328,9 @@ def parse_mm_auto(url):
     page = urllib.request.urlopen(req, timeout=10)
     if page.getcode() == 200:
         page_html = BeautifulSoup(page.read(), "html.parser")
-        listing_images = []
+        images = []
         for image in page_html.select(".rsTmb"):
-            listing_images.append({"title": "Image", "url": image["src"]})
+            images.append({"title": "Image", "url": image["src"]})
 
         result_object = {
             "crusty_car_data": [
@@ -409,10 +366,10 @@ def parse_mm_auto(url):
             ],  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
             "price": 0,
             "description": "",
-            "features": "[]",
-            "phone": "",
-            "listing_images": "",
-            "main_image": "",
+            "options_data": "[]",
+            "contact_data": "",
+            "images": "",
+            "thumbnail": "",
             "date": datetime.now().strftime("%d.%m.%Y"),
             "time": datetime.now().strftime("%H:%M"),
             "subcat": "Cits",
@@ -445,7 +402,7 @@ def parse_mm_auto(url):
         except:
             pass
         try:
-            result_object["main_image"] = listing_images[0]["url"]
+            result_object["thumbnail"] = images[0]["url"]
         except:
             pass
         try:
@@ -453,7 +410,7 @@ def parse_mm_auto(url):
         except:
             pass
         try:
-            result_object["phone"] = "".join(
+            result_object["contact_data"] = "".join(
                 i
                 for i in page_html.select_one(".tel_number").find("span").text
                 if i.isdigit()
@@ -461,7 +418,7 @@ def parse_mm_auto(url):
         except:
             pass
         try:
-            result_object["listing_images"] = json.dumps(listing_images)
+            result_object["images"] = json.dumps(images)
         except:
             pass
         try:
@@ -481,9 +438,9 @@ def parse_reklama_auto(url):
     page = urllib.request.urlopen(url, timeout=10)
     if page.getcode() == 200:
         page_html = BeautifulSoup(page.read(), "html.parser")
-        listing_images = []
+        images = []
         for image in page_html.select_one(".coda-nav").findAll("img"):
-            listing_images.append({"title": "Image", "url": image["data-src"]})
+            images.append({"title": "Image", "url": image["data-src"]})
         infotable = {
             "Marka": "",
             "Gads": "",
@@ -540,10 +497,10 @@ def parse_reklama_auto(url):
                 ],  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
                 "price": 0,
                 "description": "",
-                "features": "[]",
-                "phone": "",
-                "listing_images": "",
-                "main_image": "",
+                "options_data": "[]",
+                "contact_data": "",
+                "images": "",
+                "thumbnail": "",
                 "date": datetime.now().strftime("%d.%m.%Y"),
                 "time": datetime.now().strftime("%H:%M"),
                 "subcat": "Cits",
@@ -561,7 +518,7 @@ def parse_reklama_auto(url):
         except:
             pass
         try:
-            result_object["main_image"] = listing_images[0]["url"]
+            result_object["thumbnail"] = images[0]["url"]
         except:
             pass
         try:
@@ -569,7 +526,7 @@ def parse_reklama_auto(url):
         except:
             pass
         try:
-            result_object["phone"] = "".join(
+            result_object["contact_data"] = "".join(
                 i
                 for i in page_html.select_one(".tel_number").find("span").text
                 if i.isdigit()
@@ -577,7 +534,7 @@ def parse_reklama_auto(url):
         except:
             pass
         try:
-            result_object["listing_images"] = json.dumps(listing_images)
+            result_object["images"] = json.dumps(images)
         except:
             pass
         try:
@@ -595,9 +552,9 @@ def parse_elots_auto(url):
     page = urllib.request.urlopen(url, timeout=10)
     if page.getcode() == 200:
         page_html = BeautifulSoup(page.read(), "html.parser")
-        listing_images = []
+        images = []
         for image in page_html.select_one(".bxslider").findAll("img", {"class": "bxslider"}):
-            listing_images.append(
+            images.append(
                 {"title": "Image", "url": image["src"]}
             )
 
@@ -655,10 +612,10 @@ def parse_elots_auto(url):
                 ],  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
                 "price": 0,
                 "description": "",
-                "features": "[]",
-                "phone": "",
-                "listing_images": "",
-                "main_image": "",
+                "options_data": "[]",
+                "contact_data": "",
+                "images": "",
+                "thumbnail": "",
                 "date": datetime.now().strftime("%d.%m.%Y"),
                 "time": datetime.now().strftime("%H:%M"),
                 "subcat": "Cits",
@@ -676,7 +633,7 @@ def parse_elots_auto(url):
         except:
             pass
         try:
-            result_object["main_image"] = listing_images[0]["url"]
+            result_object["thumbnail"] = images[0]["url"]
         except:
             pass
         try:
@@ -684,13 +641,13 @@ def parse_elots_auto(url):
         except:
             pass
         try:
-            result_object["phone"] = "".join(
+            result_object["contact_data"] = "".join(
                 i for i in page_html.select_one(".phoneBlock").text if i.isdigit()
             )
         except:
             pass
         try:
-            result_object["listing_images"] = json.dumps(listing_images)
+            result_object["images"] = json.dumps(images)
         except:
             pass
         try:
@@ -708,9 +665,9 @@ def parse_viss_auto(url):
     page = urllib.request.urlopen(url, timeout=10)
     if page.getcode() == 200:
         page_html = BeautifulSoup(page.read(), "html.parser")
-        listing_images = []
+        images = []
         for image in page_html.findAll("img", {"class": "maza_bilde"}):
-            listing_images.append(
+            images.append(
                 {"title": "Image", "url": "http://viss.lv" + image["src"]}
             )
 
@@ -772,10 +729,10 @@ def parse_viss_auto(url):
                 ],  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
                 "price": 0,
                 "description": "",
-                "features": "[]",
-                "phone": "",
-                "listing_images": "",
-                "main_image": "",
+                "options_data": "[]",
+                "contact_data": "",
+                "images": "",
+                "thumbnail": "",
                 "date": datetime.now().strftime("%d.%m.%Y"),
                 "time": datetime.now().strftime("%H:%M"),
                 "subcat": "Cits",
@@ -793,7 +750,7 @@ def parse_viss_auto(url):
         except:
             pass
         try:
-            result_object["main_image"] = listing_images[0]["url"]
+            result_object["thumbnail"] = images[0]["url"]
         except:
             pass
         try:
@@ -801,13 +758,13 @@ def parse_viss_auto(url):
         except:
             pass
         try:
-            result_object["phone"] = "".join(
+            result_object["contact_data"] = "".join(
                 i for i in infotable["Telefons:"] if i.isdigit()
             )
         except:
             pass
         try:
-            result_object["listing_images"] = json.dumps(listing_images)
+            result_object["images"] = json.dumps(images)
         except:
             pass
         try:
@@ -1075,13 +1032,13 @@ def main():
             result = parse_ss_auto(adEntry["link"])
             sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             val = (
-                result["main_image"].replace("https:", ""),
+                result["thumbnail"].replace("https:", ""),
                 result["description"][:254],
-                result["listing_images"],
+                result["images"],
                 int(result["price"]),
                 adEntry["link"],
                 json.dumps(result["crusty_car_data"]),
-                result["features"],
+                result["options_data"],
                 None,
                 result["date"],
                 result["time"],
@@ -1109,9 +1066,9 @@ def main():
             result = parse_ss_auto(adEntry["link"])
             sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             val = (
-                result["main_image"].replace("https:", ""),
+                result["thumbnail"].replace("https:", ""),
                 result["description"][:254],
-                result["listing_images"],
+                result["images"],
                 int(result["price"]),
                 adEntry["link"],
                 "[]",
@@ -1146,13 +1103,13 @@ def main():
                 result = parse_autoss(elem["href"])
                 sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result["main_image"].replace("https:", ""),
+                    result["thumbnail"].replace("https:", ""),
                     result["description"],
-                    result["listing_images"],
+                    result["images"],
                     int(result["price"]),
                     elem["href"],
                     json.dumps(result["crusty_car_data"]),
-                    result["features"],
+                    result["options_data"],
                     None,
                     result["date"],
                     result["time"],
@@ -1206,9 +1163,9 @@ def main():
                 if row_count > 0:
                     continue
 
-                listing_images = []
+                images = []
                 for image in result["images"]:
-                    listing_images.append(
+                    images.append(
                         {"title": "Image", "url": "http:" + image["original"]}
                     )
 
@@ -1252,10 +1209,10 @@ def main():
                     ),  # thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie
                     "price": str(result["price"]),
                     "description": result["text"],
-                    "features": json.dumps([x["caption"] for x in result["features"]]),
-                    "phone": result["phone"],
-                    "listing_images": json.dumps(listing_images),
-                    "main_image": result["images"][0]["large"],
+                    "options_data": json.dumps([x["caption"] for x in result["options_data"]]),
+                    "contact_data": result["contact_data"],
+                    "images": json.dumps(images),
+                    "thumbnail": result["images"][0]["large"],
                     "date": datetime.now().strftime("%d.%m.%Y"),
                     "time": datetime.now().strftime("%H:%M"),
                     "subcat": result["brand"]["caption"],
@@ -1267,12 +1224,12 @@ def main():
                     if "images" in result_object
                     else "",
                     result_object["description"][:254],
-                    result_object["listing_images"],
+                    result_object["images"],
                     result_object["price"],
                     f"https://zip.lv/lv/show/transports/vieglie-auto/?i={result['id']}",
                     result_object["crusty_car_data"],
-                    result_object["features"],
-                    result_object["phone"],
+                    result_object["options_data"],
+                    result_object["contact_data"],
                     result_object["date"],
                     result_object["time"],
                     currentCats[result_object["subcat"]],
@@ -1323,9 +1280,9 @@ def main():
                 if row_count > 0:
                     continue
 
-                listing_images = []
+                images = []
                 for image in result["images"]:
-                    listing_images.append(
+                    images.append(
                         {"title": "Image", "url": "http:" + image["original"]}
                     )
 
@@ -1333,10 +1290,10 @@ def main():
                     "crusty_car_data": "[]",
                     "price": str(result["price"]),
                     "description": result["text"],
-                    "features": "[]",
-                    "phone": result["phone"],
-                    "listing_images": json.dumps(listing_images),
-                    "main_image": result["images"][0]["large"],
+                    "options_data": "[]",
+                    "contact_data": result["contact_data"],
+                    "images": json.dumps(images),
+                    "thumbnail": result["images"][0]["large"],
                     "date": datetime.now().strftime("%d.%m.%Y"),
                     "time": datetime.now().strftime("%H:%M"),
                     "subcat": result["brand"]["caption"],
@@ -1348,12 +1305,12 @@ def main():
                     if "images" in result_object
                     else "",
                     result_object["description"][:254],
-                    result_object["listing_images"],
+                    result_object["images"],
                     result_object["price"],
                     f"https://zip.lv/lv/show/transports/vieglie-auto/?i={result['id']}",
                     result_object["crusty_car_data"],
-                    result_object["features"],
-                    result_object["phone"],
+                    result_object["options_data"],
+                    result_object["contact_data"],
                     result_object["date"],
                     result_object["time"],
                     currentCats[result_object["subcat"]],
@@ -1398,13 +1355,13 @@ def main():
                 result = parse_mm_auto(elem["href"])
                 sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result["main_image"].replace("https:", ""),
+                    result["thumbnail"].replace("https:", ""),
                     result["description"],
-                    result["listing_images"],
+                    result["images"],
                     int(result["price"]),
                     elem["href"],
                     json.dumps(result["crusty_car_data"]),
-                    result["features"],
+                    result["options_data"],
                     None,
                     result["date"],
                     result["time"],
@@ -1441,13 +1398,13 @@ def main():
                 result = parse_reklama_auto(adEntry["link"])
                 sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result["main_image"].replace("https:", ""),
+                    result["thumbnail"].replace("https:", ""),
                     result["description"],
-                    result["listing_images"],
+                    result["images"],
                     int(result["price"]),
                     adEntry["link"],
                     json.dumps(result["crusty_car_data"]),
-                    result["features"],
+                    result["options_data"],
                     None,
                     result["date"],
                     result["time"],
@@ -1480,13 +1437,13 @@ def main():
                 result = parse_elots_auto(elem['href'])
                 sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result["main_image"].replace("https:", ""),
+                    result["thumbnail"].replace("https:", ""),
                     result["description"],
-                    result["listing_images"],
+                    result["images"],
                     int(result["price"]),
                     elem['href'],
                     json.dumps(result["crusty_car_data"]),
-                    result["features"],
+                    result["options_data"],
                     None,
                     result["date"],
                     result["time"],
@@ -1530,13 +1487,13 @@ def main():
                 result = parse_viss_auto(href)
                 sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result["main_image"].replace("https:", ""),
+                    result["thumbnail"].replace("https:", ""),
                     result["description"],
-                    result["listing_images"],
+                    result["images"],
                     int(result["price"]),
                     href,
                     json.dumps(result["crusty_car_data"]),
-                    result["features"],
+                    result["options_data"],
                     None,
                     result["date"],
                     result["time"],
