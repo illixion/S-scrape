@@ -20,18 +20,6 @@ db = mysql.connector.connect(
 
 
 def parse_ss_auto(url):
-    """
-    Convert the ss.com/ss.lv car ad link to parsed information.
-
-    Parameters:
-    url (string): ss.com/ss.lv URL to parse
-    lang (string): lv or ru, specifies language of returned data
-
-    Returns:
-    object: all data that could be extracted from the page, check code for data format
-
-    """
-
     page = urllib.request.urlopen(url, timeout=10)
     if page.getcode() == 200:
         page_html = BeautifulSoup(page.read(), "html.parser")
@@ -42,41 +30,246 @@ def parse_ss_auto(url):
                 {"title": "Image", "url": image["src"].replace(".t.", ".800.")}
             )
 
-        try:
-            price = "".join(
-                i for i in bsFind(page_html, "#tdo_8", type="select") if i.isdigit()
-            )
-        except:
-            price = 0
-        try:
-            thumbnail = images[0]["url"]
-        except:
-            thumbnail = ""
+        result_object = {
+            "thumbnail": "",
+            "description": "",
+            "images": "",
+            "price": "0",
+            "year": "0",
+            "engine": "",
+            "transmision": "",
+            "mileage": "0",
+            "colour": "",
+            "type": "",
+            "technical_inspection": "",
+            "main_data": "",
+            "options_data": "",
+            "original_url": "",
+            "contact_data": "",
+            "post_in_data": datetime.now().strftime("%d.%m.%Y"),
+            "post_in_time": datetime.now().strftime("%H:%M"),
+            "subcat": "Cits",
+            "model": "",
+        }
 
         try:
-            return {
-                "thumbnail": thumbnail,
-                "description": bsFind(page_html, "", type="description"),
-                "images": json.dumps(images),
-                "price": price or 0,
-                "year": bsFind(page_html, "td", {"id": "tdo_18"}) or 0,
-                "engine": bsFind(page_html, "td", {"id": "tdo_15"}),
-                "transmision": bsFind(page_html, "td", {"id": "tdo_35"}),
-                "mileage": bsFind(page_html, "td", {"id": "tdo_16"}) or 0,
-                "colour": bsFind(page_html, "td", {"id": "tdo_17"}, "color"),
-                "type": bsFind(page_html, "td", {"id": "tdo_32"}),
-                "technical_inspection": bsFind(page_html, "td", {"id": "tdo_223"}),
-                "main_data": "",
-                "options_data": parse_car_feature_list(page_html.findAll("td", "auto_c_column")),
-                "original_url": url,
-                "contact_data": bsFind(page_html, "span", {"id": "phone_td_1"}, "contents", 0) + " " + bsFind(page_html, "span", {"id": "phone_td_1"}, "contents", 1),
-                "post_in_data": bsFind(page_html, "td", {"class": "msg_footer"}, type="date"),
-                "post_in_time": bsFind(page_html, "td", {"class": "msg_footer"}, type="time"),
-                "subcat": bsFind(page_html, "", type="subcat"),
-                "model": bsFind(page_html, "td", {"id": "tdo_31"}),
-            }
-        except AttributeError as e:
-            print(f"Error while parsing {url}, ss.com might've changed format: {e}")
+            result_object["price"] = "".join(
+                i for i in page_html.select("#tdo_8")[0].string if i.isdigit()
+            )
+        except:
+            pass
+        try:
+            result_object["thumbnail"] = images[0]["url"]
+        except:
+            pass
+        try:
+            result_object["description"] = "\n".join(
+                [
+                    line.strip()
+                    for line in [
+                        el.string
+                        for el in page_html.find("div", {"id": "msg_div_msg"})
+                        if el.string is not None
+                    ][1:]
+                ]
+            )
+        except:
+            pass
+        try:
+            result_object["model"] = page_html.find("td", {"id": "tdo_31"}).string
+        except:
+            pass
+        try:
+            result_object["year"] = "".join(
+                i for i in page_html.find("td", {"id": "tdo_18"}).string if i.isdigit()
+            )
+        except:
+            pass
+        try:
+            result_object["engine"] = page_html.find("td", {"id": "tdo_15"}).string
+        except:
+            pass
+        try:
+            result_object["transmision"] = page_html.find("td", {"id": "tdo_35"}).string
+        except:
+            pass
+        try:
+            result_object["mileage"] = "".join(
+                i for i in page_html.find("td", {"id": "tdo_16"}).string if i.isdigit()
+            )
+        except:
+            pass
+        try:
+            result_object["colour"] = page_html.find("td", {"id": "tdo_17"}).text.strip()
+        except:
+            pass
+        try:
+            result_object["type"] = page_html.find("td", {"id": "tdo_32"}).string
+        except:
+            pass
+        try:
+            result_object["technical_inspection"] = page_html.find("td", {"id": "tdo_223"}).string
+        except:
+            pass
+        try:
+            result_object["options_data"] = parse_car_feature_list(page_html.findAll("td", "auto_c_column"))
+        except:
+            pass
+        try:
+            result_object["contact_data"] = "".join(
+                i for i in page_html.select(".is-7")[0].text[-36:] if i.isdigit()
+            )
+        except:
+            pass
+        try:
+            result_object["post_in_data"] = page_html.findAll("td", {"class": "msg_footer"})[3].text.split(" ")[1]
+        except:
+            pass
+        try:
+            result_object["post_in_time"] = page_html.findAll("td", {"class": "msg_footer"})[3].text.split(" ")[2]
+        except:
+            pass
+        try:
+            result_object["images"] = json.dumps(images)
+        except:
+            pass
+        try:
+            result_object["subcat"] = page_html.findAll("h2", {"class": "headtitle"})[0].text.split(" / ")[
+                1
+            ]
+        except:
+            pass
+
+        return result_object
+    else:
+        print("connection error:", page.getcode())
+        return None
+
+def parse_ss_estate(url):
+    page = urllib.request.urlopen(url, timeout=10)
+    if page.getcode() == 200:
+        page_html = BeautifulSoup(page.read(), "html.parser")
+
+        images = []
+        for image in page_html.find_all("img", attrs={"class": "isfoto"}):
+            images.append(
+                {"title": "Image", "url": image["src"].replace(".t.", ".800.")}
+            )
+
+        result_object = {
+            "thumbnail": "",
+            "description": "",
+            "images": "",
+            "price": "",
+            "city": "",
+            "district": "",
+            "street": "",
+            "rooms": "",
+            "area_m2": "",
+            "floor": "",
+            "estate_series": "",
+            "estate_type": "",
+            "cadastre_number": "",
+            "amenities": "",
+            "main_data": "",
+            "contact_data": "",
+            "original_url": "",
+            "post_in_data": datetime.now().strftime("%d.%m.%Y"),
+            "post_in_time": datetime.now().strftime("%H:%M"),
+        }
+
+        try:
+            result_object["price"] = "".join(
+                i for i in page_html.select("#tdo_8")[0].string if i.isdigit()
+            )
+        except:
+            pass
+        try:
+            result_object["thumbnail"] = images[0]["url"]
+        except:
+            pass
+        try:
+            result_object["description"] = "\n".join(
+                [
+                    line.strip()
+                    for line in [
+                        el.string
+                        for el in page_html.find("div", {"id": "msg_div_msg"})
+                        if el.string is not None
+                    ][1:]
+                ]
+            )
+        except:
+            pass
+        try:
+            result_object["model"] = page_html.find("td", {"id": "tdo_31"}).string
+        except:
+            pass
+        try:
+            result_object["year"] = "".join(
+                i for i in page_html.find("td", {"id": "tdo_18"}).string if i.isdigit()
+            )
+        except:
+            pass
+        try:
+            result_object["engine"] = page_html.find("td", {"id": "tdo_15"}).string
+        except:
+            pass
+        try:
+            result_object["transmision"] = page_html.find("td", {"id": "tdo_35"}).string
+        except:
+            pass
+        try:
+            result_object["mileage"] = "".join(
+                i for i in page_html.find("td", {"id": "tdo_16"}).string if i.isdigit()
+            )
+        except:
+            pass
+        try:
+            result_object["colour"] = page_html.find("td", {"id": "tdo_17"}).text.strip()
+        except:
+            pass
+        try:
+            result_object["type"] = page_html.find("td", {"id": "tdo_32"}).string
+        except:
+            pass
+        try:
+            result_object["technical_inspection"] = page_html.find("td", {"id": "tdo_223"}).string
+        except:
+            pass
+        try:
+            result_object["options_data"] = parse_car_feature_list(page_html.findAll("td", "auto_c_column"))
+        except:
+            pass
+        try:
+            result_object["contact_data"] = "".join(
+                i for i in page_html.select(".is-7")[0].text[-36:] if i.isdigit()
+            )
+        except:
+            pass
+        try:
+            result_object["post_in_data"] = page_html.findAll("td", {"class": "msg_footer"})[3].text.split(" ")[1]
+        except:
+            pass
+        try:
+            result_object["post_in_time"] = page_html.findAll("td", {"class": "msg_footer"})[3].text.split(" ")[2]
+        except:
+            pass
+        try:
+            result_object["images"] = json.dumps(images)
+        except:
+            pass
+        try:
+            result_object["subcat"] = page_html.findAll("h2", {"class": "headtitle"})[0].text.split(" / ")[
+                1
+            ]
+        except:
+            pass
+
+        return result_object
+    else:
+        print("connection error:", page.getcode())
+        return None
 
 
 def parse_car_feature_list(array_of_td):
@@ -88,44 +281,6 @@ def parse_car_feature_list(array_of_td):
             thisFeature = feature.find_next("b").text
             feature_list.append({"heading": thisFeature, "item": thisFeature})
     return json.dumps(feature_list)
-
-
-def bsFind(page_html, elem, param={}, type="string", contents_id=0):
-    try:
-        if type == "string":
-            return page_html.find(elem, param).string
-        elif type == "div":
-            return page_html.find(elem, param).div
-        elif type == "contents":
-            return page_html.find(elem, param).contents[contents_id].string
-        elif type == "select":
-            return page_html.select(elem)[0].string
-        elif type == "color":
-            return page_html.findAll("div", {"class": "ads_color_opt"})[0].attrs[
-                "style"
-            ][-8:-1]
-        elif type == "description":
-            return "\n".join(
-                [
-                    line.strip()
-                    for line in [
-                        el.string
-                        for el in page_html.find("div", {"id": "msg_div_msg"})
-                        if el.string is not None
-                    ][1:]
-                ]
-            )
-        elif type == "date":
-            return page_html.findAll(elem, param)[3].text.split(" ")[1]
-        elif type == "time":
-            return page_html.findAll(elem, param)[3].text.split(" ")[2]
-        elif type == "subcat":
-            return page_html.findAll("h2", {"class": "headtitle"})[0].text.split(" / ")[
-                1
-            ]
-
-    except:
-        return None
 
 
 def parse_autoss(url):
@@ -158,11 +313,11 @@ def parse_autoss(url):
             "thumbnail": "",
             "description": "",
             "images": "",
-            "price": 0,
-            "year": 0,
+            "price": "0",
+            "year": "0",
             "engine": "",
             "transmision": "",
-            "mileage": 0,
+            "mileage": "0",
             "colour": "",
             "type": "",
             "technical_inspection": "",
@@ -207,7 +362,9 @@ def parse_autoss(url):
         except:
             pass
         try:
-            result_object["mileage"] = infotable["Nobraukums (km)"]
+            result_object["mileage"] = "".join(
+                i for i in infotable["Nobraukums (km)"] if i.isdigit()
+            )
         except:
             pass
         try:
@@ -265,11 +422,11 @@ def parse_mm_auto(url):
             "thumbnail": "",
             "description": "",
             "images": "",
-            "price": 0,
-            "year": 0,
+            "price": "0",
+            "year": "0",
             "engine": "",
             "transmision": "",
-            "mileage": 0,
+            "mileage": "0",
             "colour": "",
             "type": "",
             "technical_inspection": "",
@@ -351,11 +508,11 @@ def parse_reklama_auto(url):
                 "thumbnail": "",
                 "description": "",
                 "images": "",
-                "price": 0,
-                "year": 0,
+                "price": "0",
+                "year": "0",
                 "engine": "",
                 "transmision": "",
-                "mileage": 0,
+                "mileage": "0",
                 "colour": "",
                 "type": "",
                 "technical_inspection": "",
@@ -441,11 +598,11 @@ def parse_elots_auto(url):
                 "thumbnail": "",
                 "description": "",
                 "images": "",
-                "price": 0,
-                "year": 0,
+                "price": "0",
+                "year": "0",
                 "engine": "",
                 "transmision": "",
-                "mileage": 0,
+                "mileage": "0",
                 "colour": "",
                 "type": "",
                 "technical_inspection": "",
@@ -532,11 +689,11 @@ def parse_viss_auto(url):
                 "thumbnail": "",
                 "description": "",
                 "images": "",
-                "price": 0,
-                "year": 0,
+                "price": "0",
+                "year": "0",
                 "engine": "",
                 "transmision": "",
-                "mileage": 0,
+                "mileage": "0",
                 "colour": "",
                 "type": "",
                 "technical_inspection": "",
@@ -608,7 +765,7 @@ def main():
             if manufacturer not in currentCats:
                 sql = "INSERT INTO sub_categories (main_categorie, category_filter, category_name, category_description, item_count, url) VALUES (%s, %s, %s, %s, %s, %s)"
                 val = (
-                    1,
+                    3,
                     None,
                     manufacturer,
                     manufacturer,
@@ -629,7 +786,7 @@ def main():
             if manufacturer not in currentCats:
                 sql = "INSERT INTO sub_categories (main_categorie, category_filter, category_name, category_description, item_count, url) VALUES (%s, %s, %s, %s, %s, %s)"
                 val = (
-                    1,
+                    3,
                     None,
                     manufacturer,
                     manufacturer,
@@ -669,7 +826,7 @@ def main():
             if manufacturer not in currentCats:
                 sql = "INSERT INTO sub_categories (main_categorie, category_filter, category_name, category_description, item_count, url) VALUES (%s, %s, %s, %s, %s, %s)"
                 val = (
-                    1,
+                    3,
                     None,
                     manufacturer,
                     manufacturer,
@@ -706,7 +863,7 @@ def main():
             if manufacturer not in currentCats:
                 sql = "INSERT INTO sub_categories (main_categorie, category_filter, category_name, category_description, item_count, url) VALUES (%s, %s, %s, %s, %s, %s)"
                 val = (
-                    1,
+                    3,
                     None,
                     manufacturer,
                     manufacturer,
@@ -728,7 +885,7 @@ def main():
             if manufacturer not in currentCats:
                 sql = "INSERT INTO sub_categories (main_categorie, category_filter, category_name, category_description, item_count, url) VALUES (%s, %s, %s, %s, %s, %s)"
                 val = (
-                    1,
+                    3,
                     None,
                     manufacturer,
                     manufacturer,
@@ -762,7 +919,7 @@ def main():
             if manufacturer not in currentCats:
                 sql = "INSERT INTO sub_categories (main_categorie, category_filter, category_name, category_description, item_count, url) VALUES (%s, %s, %s, %s, %s, %s)"
                 val = (
-                    1,
+                    3,
                     None,
                     manufacturer,
                     manufacturer,
@@ -798,7 +955,7 @@ def main():
             if manufacturer not in currentCats:
                 sql = "INSERT INTO sub_categories (main_categorie, category_filter, category_name, category_description, item_count, url) VALUES (%s, %s, %s, %s, %s, %s)"
                 val = (
-                    1,
+                    3,
                     None,
                     manufacturer,
                     manufacturer,
@@ -812,7 +969,7 @@ def main():
 
     cursor = db.cursor()
     cursor.execute(
-        "select id, category_name from sub_categories where main_categorie = 1"
+        "select id, category_name from sub_categories where main_categorie = 3"
     )
     currentCats = {}
     for i in cursor.fetchall():
@@ -842,27 +999,29 @@ def main():
                 continue
 
             result = parse_ss_auto(adEntry["link"])
-            sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+
+            result['subcat'] = result['subcat'] if result['subcat'] in currentCats else currentCats["Cits"]
+
+            sql = "INSERT INTO category_data (thumbnail, description, images, price, year, engine, transmision, mileage, colour, body_type, technical_inspection, main_data, options_data, original_url, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             val = (
-                result["thumbnail"],
-                result["description"],
-                result["images"],
-                result["price"],
-                result["year"],
-                result["engine"],
-                result["transmision"],
-                result["mileage"],
-                result["colour"],
-                result["type"],
-                result["technical_inspection"],
-                result["main_data"],
-                result["options_data"],
-                result["original_url"],
-                result["contact_data"],
-                result["post_in_data"],
-                result["post_in_time"],
-                result["subcat"],
-                result["model"],
+                str(result["thumbnail"]),
+                str(result["description"]),
+                str(result["images"]),
+                str(result["price"]),
+                str(result["year"]),
+                str(result["engine"]),
+                str(result["transmision"]),
+                str(result["mileage"]),
+                str(result["colour"]),
+                str(result["type"]),
+                str(result["technical_inspection"]),
+                str(result["main_data"]),
+                str(result["options_data"]),
+                str(result["original_url"]),
+                str(result["contact_data"]),
+                str(result["post_in_data"]),
+                str(result["post_in_time"]),
+                currentCats[result["subcat"]],
             )
             cursor.execute(sql, val)
             db.commit()
@@ -870,54 +1029,54 @@ def main():
             print(f"Found and saved new entry: {adEntry['link']}")
             sleep(int(config["Configuration"]["pull_delay"]))
 
-        # estate
-        rss = feedparser.parse("https://www.ss.com/lv/real-estate/rss/")
-        for adEntry in rss["entries"]:
-            cursor.execute(
-                "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
-                (adEntry["link"],),
-            )
-            query = cursor.fetchone()
-            # gets the number of rows affected by the command executed
-            row_count = cursor.rowcount
-            if row_count > 0:
-                continue
+        # real estate
+        # rss = feedparser.parse("https://www.ss.lv/lv/real-estate/rss/")
+        # for adEntry in rss["entries"]:
+        #     cursor.execute(
+        #         "SELECT original_url, COUNT(*) FROM category_data_estates WHERE original_url = %s GROUP BY original_url",
+        #         (adEntry["link"],),
+        #     )
+        #     query = cursor.fetchone()
+        #     # gets the number of rows affected by the command executed
+        #     row_count = cursor.rowcount
+        #     if row_count > 0:
+        #         continue
 
-            result = parse_ss_auto(adEntry["link"])
-            sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-            val = (
-                result["thumbnail"],
-                result["description"],
-                result["images"],
-                result["price"],
-                result["year"],
-                result["engine"],
-                result["transmision"],
-                result["mileage"],
-                result["colour"],
-                result["type"],
-                result["technical_inspection"],
-                result["main_data"],
-                result["options_data"],
-                result["original_url"],
-                result["contact_data"],
-                result["post_in_data"],
-                result["post_in_time"],
-                result["subcat"],
-                result["model"],
-            )
-            cursor.execute(sql, val)
-            db.commit()
+        #     result = parse_ss_estate(adEntry["link"])
 
-            print(f"Found and saved new entry: {adEntry['link']}")
-            sleep(int(config["Configuration"]["pull_delay"]))
+        #     sql = "INSERT INTO category_data_estates (thumbnail, description, images, price, city, district, street, rooms, area_m2, floor, estate_series, estate_type, cadastre_number, amenities, main_data, contact_data, original_url, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        #     val = (
+        #         str(result["thumbnail"]),
+        #         str(result["description"]),
+        #         str(result["images"]),
+        #         str(result["price"]),
+        #         str(result["year"]),
+        #         str(result["engine"]),
+        #         str(result["transmision"]),
+        #         str(result["mileage"]),
+        #         str(result["colour"]),
+        #         str(result["type"]),
+        #         str(result["technical_inspection"]),
+        #         str(result["main_data"]),
+        #         str(result["options_data"]),
+        #         str(result["original_url"]),
+        #         str(result["contact_data"]),
+        #         str(result["post_in_data"]),
+        #         str(result["post_in_time"]),
+        #         6297,
+        #     )
+        #     cursor.execute(sql, val)
+        #     db.commit()
+
+        #     print(f"Found and saved new entry: {adEntry['link']}")
+        #     sleep(int(config["Configuration"]["pull_delay"]))
 
         # autoss
         print("Checking autoss.lv feeds")
         page = urllib.request.urlopen("http://autoss.eu/lv/automasinas?body=&make=&year_from=&year_to=&price_from=&price_to=&mileage_from=&mileage_to=&fuel=&power_from=&power_to=&transmission=&drive_type=&color=&location=&sort=new", timeout=10)
         if page.getcode() == 200:
             page_html = BeautifulSoup(page.read(), "html.parser")
-            for elem in page_html.select(".table")[0].find_all("a")[1:]:
+            for elem in page_html.select(".table")[0].find_all("a", {"font-weight": 500})[1:]:
                 cursor.execute(
                     "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
                     (elem["href"],),
@@ -929,32 +1088,31 @@ def main():
                     continue
 
                 result = parse_autoss(elem["href"])
-                sql = "INSERT INTO category_data (thumbnail, description, images, price, year, engine, transmision, mileage, colour, body_type, technical_inspection, main_data, options_data, original_url, contact_data, post_in_data, post_in_time, subcat, model) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                sql = "INSERT INTO category_data (thumbnail, description, images, price, year, engine, transmision, mileage, colour, body_type, technical_inspection, main_data, options_data, original_url, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result["thumbnail"],
-                    result["description"],
-                    result["images"],
-                    result["price"],
-                    result["year"],
-                    result["engine"],
-                    result["transmision"],
-                    result["mileage"],
-                    result["colour"],
-                    result["type"],
-                    result["technical_inspection"],
-                    result["main_data"],
-                    result["options_data"],
-                    result["original_url"],
-                    result["contact_data"],
-                    result["post_in_data"],
-                    result["post_in_time"],
-                    result["subcat"],
-                    result["model"],
+                    str(result["thumbnail"]),
+                    str(result["description"]),
+                    str(result["images"]),
+                    str(result["price"]),
+                    str(result["year"]),
+                    str(result["engine"]),
+                    str(result["transmision"]),
+                    str(result["mileage"]),
+                    str(result["colour"]),
+                    str(result["type"]),
+                    str(result["technical_inspection"]),
+                    str(result["main_data"]),
+                    str(result["options_data"]),
+                    str(result["original_url"]),
+                    str(result["contact_data"]),
+                    str(result["post_in_data"]),
+                    str(result["post_in_time"]),
+                    currentCats[result["subcat"]],
                 )
                 cursor.execute(sql, val)
                 db.commit()
 
-                print("Found and saved new entry: elem['href']")
+                print("Found and saved new entry:", elem['href'])
                 sleep(int(config["Configuration"]["pull_delay"]))
 
         else:
@@ -1009,11 +1167,11 @@ def main():
                     "thumbnail": "",
                     "description": "",
                     "images": "",
-                    "price": 0,
-                    "year": 0,
+                    "price": "0",
+                    "year": "0",
                     "engine": "",
                     "transmision": "",
-                    "mileage": 0,
+                    "mileage": "0",
                     "colour": "",
                     "type": "",
                     "technical_inspection": "",
@@ -1026,27 +1184,88 @@ def main():
                     "subcat": "Cits",
                     "model": "",
                 }
-                sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+
+                try:
+                    result_object["thumbnail"] = images[0]["large"]
+                except:
+                    pass
+                try:
+                    result_object["description"] = result["text"]
+                except:
+                    pass
+                try:
+                    result_object["images"] = json.dumps(images)
+                except:
+                    pass
+                try:
+                    result_object["price"] = result["price"]
+                except:
+                    pass
+                try:
+                    result_object["year"] = int(result["year"])
+                except:
+                    pass
+                try:
+                    result_object["engine"] = result["fuel"]["caption"]
+                except:
+                    pass
+                try:
+                    result_object["transmision"] = result["gearbox"]["caption"]
+                except:
+                    pass
+                try:
+                    result_object["mileage"] = result["mileage"]
+                except:
+                    pass
+                try:
+                    result_object["colour"] = result["color"]
+                except:
+                    pass
+                try:
+                    result_object["type"] = result["body"]["caption"]
+                except:
+                    pass
+                try:
+                    result_object["options_data"] = json.dumps([x["caption"] for x in result["features"]])
+                except:
+                    pass
+                try:
+                    result_object["original_url"] = f"https://zip.lv/lv/show/transports/vieglie-auto/?i={result['id']}"
+                except:
+                    pass
+                try:
+                    result_object["contact_data"] = result["phone"]
+                except:
+                    pass
+                try:
+                    result_object["subcat"] = result["brand"]["caption"]
+                except:
+                    pass
+                try:
+                    result_object["model"] = result["model"]["caption"]
+                except:
+                    pass
+
+                sql = "INSERT INTO category_data (thumbnail, description, images, price, year, engine, transmision, mileage, colour, body_type, technical_inspection, main_data, options_data, original_url, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result["thumbnail"],
-                    result["description"],
-                    result["images"],
-                    result["price"],
-                    result["year"],
-                    result["engine"],
-                    result["transmision"],
-                    result["mileage"],
-                    result["colour"],
-                    result["type"],
-                    result["technical_inspection"],
-                    result["main_data"],
-                    result["options_data"],
-                    result["original_url"],
-                    result["contact_data"],
-                    result["post_in_data"],
-                    result["post_in_time"],
-                    result["subcat"],
-                    result["model"],
+                    str(result_object["thumbnail"]),
+                    str(result_object["description"]),
+                    str(result_object["images"]),
+                    str(result_object["price"]),
+                    str(result_object["year"]),
+                    str(result_object["engine"]),
+                    str(result_object["transmision"]),
+                    str(result_object["mileage"]),
+                    str(result_object["colour"]),
+                    str(result_object["type"]),
+                    str(result_object["technical_inspection"]),
+                    str(result_object["main_data"]),
+                    str(result_object["options_data"]),
+                    str(result_object["original_url"]),
+                    str(result_object["contact_data"]),
+                    str(result_object["post_in_data"]),
+                    str(result_object["post_in_time"]),
+                    currentCats[result_object["subcat"]],
                 )
                 cursor.execute(sql, val)
                 db.commit()
@@ -1059,99 +1278,98 @@ def main():
             print("zip.lv returned", page.getcode())
 
         # estate
-        payload = '[["Items__Get",{"_t":48,"pg":1,"url":"/ru/nedvizhimost/kvartiri-prodaetsja/?pg=1"},{"Items__Item":["activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGrouped":["group","group2","place","place2","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGroupedPriced":["currency","group","group2","place","place2","price","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemFlat":["address","area","buildingType","coords","currency","features","floor","floors","period","place","place2","price","rooms","series","status","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemCar":["body","brand","color","country","currency","drive","engine","features","fuel","gearbox","gearCount","mileage","model","place","place2","price","ta","vin","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemHouse":["address","area","buildingType","coords","currency","features","floors","landArea","period","place","place2","price","rooms","status","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBike":["brand","currency","engine","model","place","place2","price","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemLand":["area","coords","currency","landType","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemOffice":["address","area","buildingType","coords","currency","floor","floors","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBicycle":["brand","currency","model","place","place2","price","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTruck":["brand","currency","engine","model","place","place2","price","vehicleType","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemJob":["companyName","companyRegNr","jobType","place","place2","position","workArea","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitled":["group","group2","place","place2","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitledPriced":["currency","group","group2","place","place2","price","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitledPlace":["currency","group","group2","place","place2","price","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemPriced":["currecny","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBuyGrouped":["group","group2","place","place2","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemFreeStuff":["group","group2","place","place2","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGroupedSell":["currency","group","group2","place","place2","price","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Categories__Item":["id","parentId","title","icon","isNew","isList","seoUrl","itemCount","meta","parentCategory"]}],["Filters__GetData",{"_t":89,"url":"/ru/nedvizhimost/kvartiri-prodaetsja/?pg=1"},{}],["Categories__GetCategory",{"_t":45,"id":63},{"Categories__Item":["id","parentId","title","icon","isNew","isList","seoUrl","itemCount","meta","parentCategory"]}]]'
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0",
-            "Accept": "*/*",
-            "Accept-Language": "en-US,en;q=0.5",
-            "Content-Type": "text/plain;charset=UTF-8",
-            "Origin": "https://zip.lv",
-            "DNT": "1",
-            "Connection": "keep-alive",
-            "Referer": "https://zip.lv/ru/nedvizhimost/kvartiri-prodaetsja/?pg=1",
-            "Cache-Control": "max-age=0",
-            "TE": "Trailers",
-        }
-        req = urllib.request.Request(
-            "https://zip.lv/api/rpc.php?apikey&uid=0&lang=lv&m=Items__Get%2CFilters__GetData%2CCategories__GetCategory",
-            data=payload.encode("ascii"),
-            headers=headers,
-        )
-        page = urllib.request.urlopen(req, timeout=10)
-        if page.getcode() == 200:
-            json_result = json.loads(page.read())
+        # payload = '[["Items__Get",{"_t":48,"pg":1,"url":"/ru/nedvizhimost/kvartiri-prodaetsja/?pg=1"},{"Items__Item":["activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGrouped":["group","group2","place","place2","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGroupedPriced":["currency","group","group2","place","place2","price","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemFlat":["address","area","buildingType","coords","currency","features","floor","floors","period","place","place2","price","rooms","series","status","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemCar":["body","brand","color","country","currency","drive","engine","features","fuel","gearbox","gearCount","mileage","model","place","place2","price","ta","vin","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemHouse":["address","area","buildingType","coords","currency","features","floors","landArea","period","place","place2","price","rooms","status","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBike":["brand","currency","engine","model","place","place2","price","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemLand":["area","coords","currency","landType","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemOffice":["address","area","buildingType","coords","currency","floor","floors","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBicycle":["brand","currency","model","place","place2","price","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTruck":["brand","currency","engine","model","place","place2","price","vehicleType","year","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemJob":["companyName","companyRegNr","jobType","place","place2","position","workArea","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitled":["group","group2","place","place2","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitledPriced":["currency","group","group2","place","place2","price","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemTitledPlace":["currency","group","group2","place","place2","price","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemPriced":["currecny","place","place2","price","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemBuyGrouped":["group","group2","place","place2","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemFreeStuff":["group","group2","place","place2","status","status2","title","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Items__ItemGroupedSell":["currency","group","group2","place","place2","price","status","status2","activeType","adType","canCall","canOfferPrice","canSendEmail","category","created","email","expires","extUrl","highlighted","id","images","isFavorite","logo","name","phone","phone2","priceOffers","requestedImg","text","type","uid","url","video","views"],"Categories__Item":["id","parentId","title","icon","isNew","isList","seoUrl","itemCount","meta","parentCategory"]}],["Filters__GetData",{"_t":89,"url":"/ru/nedvizhimost/kvartiri-prodaetsja/?pg=1"},{}],["Categories__GetCategory",{"_t":45,"id":63},{"Categories__Item":["id","parentId","title","icon","isNew","isList","seoUrl","itemCount","meta","parentCategory"]}]]'
+        # headers = {
+        #     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0",
+        #     "Accept": "*/*",
+        #     "Accept-Language": "en-US,en;q=0.5",
+        #     "Content-Type": "text/plain;charset=UTF-8",
+        #     "Origin": "https://zip.lv",
+        #     "DNT": "1",
+        #     "Connection": "keep-alive",
+        #     "Referer": "https://zip.lv/ru/nedvizhimost/kvartiri-prodaetsja/?pg=1",
+        #     "Cache-Control": "max-age=0",
+        #     "TE": "Trailers",
+        # }
+        # req = urllib.request.Request(
+        #     "https://zip.lv/api/rpc.php?apikey&uid=0&lang=lv&m=Items__Get%2CFilters__GetData%2CCategories__GetCategory",
+        #     data=payload.encode("ascii"),
+        #     headers=headers,
+        # )
+        # page = urllib.request.urlopen(req, timeout=10)
+        # if page.getcode() == 200:
+        #     json_result = json.loads(page.read())
 
-            for result in json_result[0][0]["items"]:
-                cursor.execute(
-                    "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
-                    (
-                        f"https://zip.lv/lv/show/transports/vieglie-auto/?i={result['id']}",
-                    ),
-                )
-                query = cursor.fetchone()  # noqa
-                # gets the number of rows affected by the command executed
-                row_count = cursor.rowcount
-                if row_count > 0:
-                    continue
+        #     for result in json_result[0][0]["items"]:
+        #         cursor.execute(
+        #             "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
+        #             (
+        #                 f"https://zip.lv/lv/show/transports/vieglie-auto/?i={result['id']}",
+        #             ),
+        #         )
+        #         query = cursor.fetchone()  # noqa
+        #         # gets the number of rows affected by the command executed
+        #         row_count = cursor.rowcount
+        #         if row_count > 0:
+        #             continue
 
-                images = []
-                for image in result["images"]:
-                    images.append(
-                        {"title": "Image", "url": "http:" + image["original"]}
-                    )
+        #         images = []
+        #         for image in result["images"]:
+        #             images.append(
+        #                 {"title": "Image", "url": "http:" + image["original"]}
+        #             )
 
-                result_object = {
-                    "thumbnail": "",
-                    "description": "",
-                    "images": "",
-                    "price": 0,
-                    "year": 0,
-                    "engine": "",
-                    "transmision": "",
-                    "mileage": 0,
-                    "colour": "",
-                    "type": "",
-                    "technical_inspection": "",
-                    "main_data": "",
-                    "options_data": "",
-                    "original_url": "",
-                    "contact_data": "",
-                    "post_in_data": datetime.now().strftime("%d.%m.%Y"),
-                    "post_in_time": datetime.now().strftime("%H:%M"),
-                    "subcat": "Cits",
-                    "model": "",
-                }
-                sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-                val = (
-                    result["thumbnail"],
-                    result["description"],
-                    result["images"],
-                    result["price"],
-                    result["year"],
-                    result["engine"],
-                    result["transmision"],
-                    result["mileage"],
-                    result["colour"],
-                    result["type"],
-                    result["technical_inspection"],
-                    result["main_data"],
-                    result["options_data"],
-                    result["original_url"],
-                    result["contact_data"],
-                    result["post_in_data"],
-                    result["post_in_time"],
-                    result["subcat"],
-                    result["model"],
-                )
-                cursor.execute(sql, val)
-                db.commit()
+        #         result_object = {
+        #             "thumbnail": "",
+        #             "description": "",
+        #             "images": "",
+        #             "price": "0",
+        #             "year": "0",
+        #             "engine": "",
+        #             "transmision": "",
+        #             "mileage": "0",
+        #             "colour": "",
+        #             "type": "",
+        #             "technical_inspection": "",
+        #             "main_data": "",
+        #             "options_data": "",
+        #             "original_url": "",
+        #             "contact_data": "",
+        #             "post_in_data": datetime.now().strftime("%d.%m.%Y"),
+        #             "post_in_time": datetime.now().strftime("%H:%M"),
+        #             "subcat": "Cits",
+        #             "model": "",
+        #         }
+        #         sql = "INSERT INTO category_data (thumbnail, description, images, price, year, engine, transmision, mileage, colour, body_type, technical_inspection, main_data, options_data, original_url, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        #         val = (
+        #             str(result["thumbnail"]),
+        #             str(result["description"]),
+        #             str(result["images"]),
+        #             str(result["price"]),
+        #             str(result["year"]),
+        #             str(result["engine"]),
+        #             str(result["transmision"]),
+        #             str(result["mileage"]),
+        #             str(result["colour"]),
+        #             str(result["type"]),
+        #             str(result["technical_inspection"]),
+        #             str(result["main_data"]),
+        #             str(result["options_data"]),
+        #             str(result["original_url"]),
+        #             str(result["contact_data"]),
+        #             str(result["post_in_data"]),
+        #             str(result["post_in_time"]),
+        #             currentCats[result["subcat"]],
+        #         )
+        #         cursor.execute(sql, val)
+        #         db.commit()
 
-                print(
-                    f"Found and saved new entry: https://zip.lv/lv/show/transports/vieglie-auto/?i={result['id']}"
-                )
-                sleep(int(config["Configuration"]["pull_delay"]))
-        else:
-            print("zip.lv returned", page.getcode())
+        #         print(
+        #             f"Found and saved new entry: https://zip.lv/lv/show/transports/vieglie-auto/?i={result['id']}"
+        #         )
+        #         sleep(int(config["Configuration"]["pull_delay"]))
+        # else:
+        #     print("zip.lv returned", page.getcode())
 
         print("Checking mm.lv feeds")
         headers = {
@@ -1181,27 +1399,26 @@ def main():
                     continue
 
                 result = parse_mm_auto(elem["href"])
-                sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                sql = "INSERT INTO category_data (thumbnail, description, images, price, year, engine, transmision, mileage, colour, body_type, technical_inspection, main_data, options_data, original_url, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result["thumbnail"],
-                    result["description"],
-                    result["images"],
-                    result["price"],
-                    result["year"],
-                    result["engine"],
-                    result["transmision"],
-                    result["mileage"],
-                    result["colour"],
-                    result["type"],
-                    result["technical_inspection"],
-                    result["main_data"],
-                    result["options_data"],
-                    result["original_url"],
-                    result["contact_data"],
-                    result["post_in_data"],
-                    result["post_in_time"],
-                    result["subcat"],
-                    result["model"],
+                    str(result["thumbnail"]),
+                    str(result["description"]),
+                    str(result["images"]),
+                    str(result["price"]),
+                    str(result["year"]),
+                    str(result["engine"]),
+                    str(result["transmision"]),
+                    str(result["mileage"]),
+                    str(result["colour"]),
+                    str(result["type"]),
+                    str(result["technical_inspection"]),
+                    str(result["main_data"]),
+                    str(result["options_data"]),
+                    str(result["original_url"]),
+                    str(result["contact_data"]),
+                    str(result["post_in_data"]),
+                    str(result["post_in_time"]),
+                    currentCats[result["subcat"]],
                 )
                 cursor.execute(sql, val)
                 db.commit()
@@ -1232,27 +1449,26 @@ def main():
                     continue
 
                 result = parse_reklama_auto(adEntry["link"])
-                sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                sql = "INSERT INTO category_data (thumbnail, description, images, price, year, engine, transmision, mileage, colour, body_type, technical_inspection, main_data, options_data, original_url, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result["thumbnail"],
-                    result["description"],
-                    result["images"],
-                    result["price"],
-                    result["year"],
-                    result["engine"],
-                    result["transmision"],
-                    result["mileage"],
-                    result["colour"],
-                    result["type"],
-                    result["technical_inspection"],
-                    result["main_data"],
-                    result["options_data"],
-                    result["original_url"],
-                    result["contact_data"],
-                    result["post_in_data"],
-                    result["post_in_time"],
-                    result["subcat"],
-                    result["model"],
+                    str(result["thumbnail"]),
+                    str(result["description"]),
+                    str(result["images"]),
+                    str(result["price"]),
+                    str(result["year"]),
+                    str(result["engine"]),
+                    str(result["transmision"]),
+                    str(result["mileage"]),
+                    str(result["colour"]),
+                    str(result["type"]),
+                    str(result["technical_inspection"]),
+                    str(result["main_data"]),
+                    str(result["options_data"]),
+                    str(result["original_url"]),
+                    str(result["contact_data"]),
+                    str(result["post_in_data"]),
+                    str(result["post_in_time"]),
+                    currentCats[result["subcat"]],
                 )
                 cursor.execute(sql, val)
                 db.commit()
@@ -1279,27 +1495,26 @@ def main():
                     continue
 
                 result = parse_elots_auto(elem['href'])
-                sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                sql = "INSERT INTO category_data (thumbnail, description, images, price, year, engine, transmision, mileage, colour, body_type, technical_inspection, main_data, options_data, original_url, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result["thumbnail"],
-                    result["description"],
-                    result["images"],
-                    result["price"],
-                    result["year"],
-                    result["engine"],
-                    result["transmision"],
-                    result["mileage"],
-                    result["colour"],
-                    result["type"],
-                    result["technical_inspection"],
-                    result["main_data"],
-                    result["options_data"],
-                    result["original_url"],
-                    result["contact_data"],
-                    result["post_in_data"],
-                    result["post_in_time"],
-                    result["subcat"],
-                    result["model"],
+                    str(result["thumbnail"]),
+                    str(result["description"]),
+                    str(result["images"]),
+                    str(result["price"]),
+                    str(result["year"]),
+                    str(result["engine"]),
+                    str(result["transmision"]),
+                    str(result["mileage"]),
+                    str(result["colour"]),
+                    str(result["type"]),
+                    str(result["technical_inspection"]),
+                    str(result["main_data"]),
+                    str(result["options_data"]),
+                    str(result["original_url"]),
+                    str(result["contact_data"]),
+                    str(result["post_in_data"]),
+                    str(result["post_in_time"]),
+                    currentCats[result["subcat"]],
                 )
                 cursor.execute(sql, val)
                 db.commit()
@@ -1337,27 +1552,26 @@ def main():
                     continue
 
                 result = parse_viss_auto(href)
-                sql = "INSERT INTO category_data (thumbnail, description, images, price, original_url, main_data, options_data, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                sql = "INSERT INTO category_data (thumbnail, description, images, price, year, engine, transmision, mileage, colour, body_type, technical_inspection, main_data, options_data, original_url, contact_data, post_in_data, post_in_time, sub_categorie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 val = (
-                    result["thumbnail"],
-                    result["description"],
-                    result["images"],
-                    result["price"],
-                    result["year"],
-                    result["engine"],
-                    result["transmision"],
-                    result["mileage"],
-                    result["colour"],
-                    result["type"],
-                    result["technical_inspection"],
-                    result["main_data"],
-                    result["options_data"],
-                    result["original_url"],
-                    result["contact_data"],
-                    result["post_in_data"],
-                    result["post_in_time"],
-                    result["subcat"],
-                    result["model"],
+                    str(result["thumbnail"]),
+                    str(result["description"]),
+                    str(result["images"]),
+                    str(result["price"]),
+                    str(result["year"]),
+                    str(result["engine"]),
+                    str(result["transmision"]),
+                    str(result["mileage"]),
+                    str(result["colour"]),
+                    str(result["type"]),
+                    str(result["technical_inspection"]),
+                    str(result["main_data"]),
+                    str(result["options_data"]),
+                    str(result["original_url"]),
+                    str(result["contact_data"]),
+                    str(result["post_in_data"]),
+                    str(result["post_in_time"]),
+                    currentCats[result["subcat"]],
                 )
                 cursor.execute(sql, val)
                 db.commit()
