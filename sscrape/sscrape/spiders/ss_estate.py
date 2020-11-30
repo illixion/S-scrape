@@ -1,47 +1,46 @@
 import json
+from json import dumps
 import scrapy
-from ..items import AutoItem
+from ..items import EstateItem
 
 
-class SsAutoSpider(scrapy.Spider):
+class SsEstateSpider(scrapy.Spider):
     name = 'ss-estate'
     allowed_domains = ['ss.com']
+    start_urls = ["https://www.ss.com/lv/real-estate/sell/rss/"]
 
+    def parse(self, response):
+        for url in response.xpath("//channel/item/link/text()").getall():
+            yield scrapy.Request(url=url, callback=self.parse_ad)
 
-def start_requests(self):
-    response = scrapy.Request(url="https://www.ss.com/lv/real-estate/sell/rss/")
-    for url in response.xpath("//channel/item/link/text()").getall():
-        yield scrapy.Request(url=url, callback=self.parse_url)
+    def parse_ad(self, response):
+        item = EstateItem()
+        images = []
 
+        for image in response.xpath('//img[@class="pic_thumbnail isfoto"]/@src').getall():
+            images.append(
+                {"title": "Image", "url": image.replace(".t.", ".800.")}
+            )
 
-def parse_url(self, response):
-    item = AutoItem()
-    item["images"] = []
+        item["images"] = (json.dumps(images) or '', )
+        item["thumbnail"] = (response.xpath('//img[@class="pic_thumbnail isfoto"]/@src').get() or '', )
+        item["description"] = ("".join(response.xpath('//div[@id="msg_div_msg"]/text()').getall()) or '', )
 
-    for image in response.xpath('//img[@class="pic_thumbnail isfoto"]/@src').getall():
-        item["images"].append(
-            {"title": "Image", "url": image.replace(".t.", ".800.")}
-        )
+        price = response.xpath('//span[@id="tdo_8"]/text()').re(r"[\d ]+€ ")
 
-    item["thumbnail"] = response.xpath('//img[@class="pic_thumbnail isfoto"]/@src').get()
-    item["description"] = "".join(response.xpath('//div[@id="msg_div_msg"]/text()').getall())
-
-    price = response.xpath('//span[@id="tdo_8"]/text()').re(r"[\d ]+€ ")
-
-    item["price"] = price[0] if len(price) > 0 else 0
-    item["city"] = response.xpath('//td[@id="tdo_20"]/b/text()').get()
-    item["district"] = response.xpath('//td[@id="tdo_856"]/b/text()').get()
-    item["street"] = response.xpath('//td[@id="tdo_11"]/b/text()').get()
-    item["rooms"] = response.xpath('//td[@id="tdo_1"]/text()').get()
-    item["area_m2"] = response.xpath('//td[@id="tdo_3"]/text()').get()
-    item["floor"] = response.xpath('//td[@id="tdo_4"]/text()').get()
-    item["estate_series"] = response.xpath('//td[@id="tdo_6"]/text()').get()
-    item["estate_type"] = response.xpath('//td[@id="tdo_2"]/text()').get()
-    item["cadastre_number"] = response.xpath('//td[@id="tdo_1631"]/text()').get()
-    item["amenities"] = response.xpath('//td[@id="tdo_1734"]/text()').get()
-    item["contact_data"] = "".join(response.xpath('//span[@id="phone_td_1"]/descendant-or-self::*/text()').getall()).strip()
-    item["original_url"] = response.url
-    item["post_in_data"] = next(iter(response.xpath('//td[@class="msg_footer" and contains(text(), "Datums")]/text()').re(r"\d+\.\d+\.\d+")), "")
-    item["post_in_time"] = next(iter(response.xpath('//td[@class="msg_footer" and contains(text(), "Datums")]/text()').re(r"\d+\:\d+")), "")
-    item["main_data"] = json.dumps(item)
-    yield item
+        item["price"] = (price[0] if len(price) > 0 else 0 or '', )
+        item["city"] = (response.xpath('//td[@id="tdo_20"]/b/text()').get() or '', )
+        item["district"] = (response.xpath('//td[@id="tdo_856"]/b/text()').get() or '', )
+        item["street"] = (response.xpath('//td[@id="tdo_11"]/b/text()').get() or '', )
+        item["rooms"] = (response.xpath('//td[@id="tdo_1"]/text()').get() or '', )
+        item["area_m2"] = (response.xpath('//td[@id="tdo_3"]/text()').get() or '', )
+        item["floor"] = (response.xpath('//td[@id="tdo_4"]/text()').get() or '', )
+        item["estate_series"] = (response.xpath('//td[@id="tdo_6"]/text()').get() or '', )
+        item["estate_type"] = (response.xpath('//td[@id="tdo_2"]/text()').get() or '', )
+        item["cadastre_number"] = (response.xpath('//td[@id="tdo_1631"]/text()').get() or '', )
+        item["amenities"] = (response.xpath('//td[@id="tdo_1734"]/text()').get() or '', )
+        item["contact_data"] = ("".join(response.xpath('//span[@id="phone_td_1"]/descendant-or-self::*/text()').getall()).strip() or '', )
+        item["original_url"] = (response.url or '', )
+        item["post_in_data"] = (next(iter(response.xpath('//td[@class="msg_footer" and contains(text(), "Datums")]/text()').re(r"\d+\.\d+\.\d+")), "") or '', )
+        item["post_in_time"] = (next(iter(response.xpath('//td[@class="msg_footer" and contains(text(), "Datums")]/text()').re(r"\d+\:\d+")), "") or '', )
+        yield item
