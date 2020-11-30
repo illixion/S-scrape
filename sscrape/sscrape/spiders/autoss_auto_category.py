@@ -1,7 +1,7 @@
 import scrapy
 
 
-class SsAutoCategorySpider(scrapy.Spider):
+class AutoSsAutoCategorySpider(scrapy.Spider):
     name = 'autoss-auto-cat'
     allowed_domains = ['autoss.eu']
     start_urls = ['http://www.autoss.eu/']
