@@ -11,7 +11,7 @@ class MmAutoSpider(scrapy.Spider):
     start_urls = ["https://mm.lv/vieglie-auto"]
 
     def parse(self, response):
-        for url in response.xpath('//*[@id="listing-card-list"]//a/@href').getall():
+        for url in response.xpath('//*[@id="listing-card-list"]/li[contains(@class, "listing-card")]//a/@href').getall():
             yield scrapy.Request(url=url, callback=self.parse_ad)
 
     def parse_ad(self, response):
@@ -49,6 +49,12 @@ class MmAutoSpider(scrapy.Spider):
             pass
 
         table_elements = response.xpath('//div[@class="item-block second-item-block item-description"]//ul[@class="ad-detail-info"]//li//text()').getall()
+        try:
+            table_elements.remove("Galvenās iezīmes")
+        except ValueError:
+            pass
+
+        # Unstable, will probably break in the future
         infotable = {}
         for idx, val in enumerate(table_elements):
             if idx % 2 == 0:
@@ -61,10 +67,10 @@ class MmAutoSpider(scrapy.Spider):
             "description": "",
             "images": "",
             "price": "0",
-            "year": "0",
+            "year": "",
             "engine": "",
             "transmision": "",
-            "mileage": "0",
+            "mileage": "",
             "colour": "",
             "type": "",
             "technical_inspection": "",
@@ -109,7 +115,7 @@ class MmAutoSpider(scrapy.Spider):
         except:
             pass
         try:
-            result_object["engine"] = infotable["Dzinējs"]
+            result_object["engine"] = infotable[" Dzinējs"]
         except:
             pass
         try:

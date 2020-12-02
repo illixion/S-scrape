@@ -26,9 +26,15 @@ class SsEstateSpider(scrapy.Spider):
         item["thumbnail"] = (response.xpath('//img[@class="pic_thumbnail isfoto"]/@src').get() or '', )
         item["description"] = ("".join(response.xpath('//div[@id="msg_div_msg"]/text()').getall()) or '', )
 
-        price = response.xpath('//span[@id="tdo_8"]/text()').re(r"[\d ]+€ ")
+        price_re = response.xpath('//*[@id="tdo_8"]/text()').re(r"[\d ]+€ ")
+        if len(price_re) != 0:
+            price = "".join(
+                i for i in response.xpath('//*[@id="tdo_8"]/text()').re(r"[\d ]+€ ")[0] if i.isdigit()
+            )
+        else:
+            price = 0
 
-        item["price"] = (price[0] if len(price) > 0 else 0 or '', )
+        item["price"] = (str(price), )
         item["city"] = (response.xpath('//td[@id="tdo_20"]/b/text()').get() or '', )
         item["district"] = (response.xpath('//td[@id="tdo_856"]/b/text()').get() or '', )
         item["street"] = (response.xpath('//td[@id="tdo_11"]/b/text()').get() or '', )

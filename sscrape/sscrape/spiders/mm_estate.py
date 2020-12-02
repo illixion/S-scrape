@@ -8,14 +8,10 @@ from ..items import EstateItem
 class MmEstateSpider(scrapy.Spider):
     name = 'mmlv-estate'
     allowed_domains = ['mm.lv', "im.mm.lv"]
-
-    def start_requests(self):
-        url = "https://mm.lv/index.php?page=ajax&action=latest_items"
-        payload = "catId=4&total_items=&sShowAs=list&sCity=&sRegion="
-        yield scrapy.Request(url, self.parse, method="POST", body=payload)
+    start_urls = ['https://mm.lv/dzivokli-riga']
 
     def parse(self, response):
-        for url in response.xpath('//*[@id="listing-card-list"]//a/@href').getall():
+        for url in response.xpath('//*[@id="listing-card-list"]/li[contains(@class, "listing-card")]//a/@href').getall():
             yield scrapy.Request(url=url, callback=self.parse_ad)
 
     def parse_ad(self, response):
@@ -65,10 +61,10 @@ class MmEstateSpider(scrapy.Spider):
             "description": "",
             "images": "",
             "price": "0",
-            "city": "0",
+            "city": "",
             "district": "",
             "street": "",
-            "rooms": "0",
+            "rooms": "",
             "area_m2": "",
             "floor": "",
             "estate_series": "",
