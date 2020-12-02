@@ -25,9 +25,9 @@ class SsAutoSpider(scrapy.Spider):
         item["thumbnail"] = (response.xpath('//img[@class="pic_thumbnail isfoto"]/@src').get() or '', )
         item["description"] = ("".join(response.xpath('//div[@id="msg_div_msg"]/text()').getall()) or '', )
 
-        price = response.xpath('//span[@id="tdo_8"]/text()').re(r"\d+")
+        price = "".join(response.xpath('//*[@id="tdo_8"]/text()').re(r"\d+"))
 
-        item["price"] = (price[0] if len(price) > 0 else 0 or '', )
+        item["price"] = (str(price), )
         item["year"] = (response.xpath('//td[@id="tdo_18"]/text()').get() or '', )
         item["engine"] = (response.xpath('//td[@id="tdo_15"]/text()').get() or '', )
         item["transmision"] = (response.xpath('//td[@id="tdo_35"]/text()').get() or '', )

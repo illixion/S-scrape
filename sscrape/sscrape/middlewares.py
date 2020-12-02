@@ -4,6 +4,8 @@
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
 from scrapy import signals
+from scrapy.exceptions import IgnoreRequest
+import mysql.connector
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
@@ -57,6 +59,15 @@ class SscrapeSpiderMiddleware:
 
 
 class SscrapeDownloaderMiddleware:
+    def __init__(self):
+        self.db = mysql.connector.connect(
+            host="127.0.0.1",
+            user="sscrape",
+            password="***REMOVED***",
+            database="***REMOVED***",
+        )
+        self.cursor = self.db.cursor()
+
     # Not all methods need to be defined. If a method is not defined,
     # scrapy acts as if the downloader middleware does not modify the
     # passed objects.
@@ -78,6 +89,27 @@ class SscrapeDownloaderMiddleware:
         # - or return a Request object
         # - or raise IgnoreRequest: process_exception() methods of
         #   installed downloader middleware will be called
+        if spider.name.endswith("-auto"):
+            self.cursor.execute(
+                "SELECT original_url, COUNT(*) FROM category_data WHERE original_url = %s GROUP BY original_url",
+                (request.url,),
+            )
+            query = self.cursor.fetchone()
+            # gets the number of rows affected by the command executed
+            row_count = self.cursor.rowcount
+            if row_count > 0:
+                raise IgnoreRequest
+        if spider.name.endswith("-estate"):
+            self.cursor.execute(
+                "SELECT original_url, COUNT(*) FROM category_data_estates WHERE original_url = %s GROUP BY original_url",
+                (request.url,),
+            )
+            query = self.cursor.fetchone()
+            # gets the number of rows affected by the command executed
+            row_count = self.cursor.rowcount
+            if row_count > 0:
+                raise IgnoreRequest
+
         return None
 
     def process_response(self, request, response, spider):
