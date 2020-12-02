@@ -63,7 +63,7 @@ class VissEstateSpider(scrapy.Spider):
             "Cena:": "",
             "Teksts:": "",
             "Kontakti:": "",
-            "Pievienots:": "",
+            "Pievienots: ": "",
         }
         for table in page_html.findAll("table", {"class": "ad_view_user_text"}):
             for row in table.findAll("tr"):
@@ -79,10 +79,10 @@ class VissEstateSpider(scrapy.Spider):
                 "description": "",
                 "images": "",
                 "price": "0",
-                "city": "0",
+                "city": "",
                 "district": "",
                 "street": "",
-                "rooms": "0",
+                "rooms": "",
                 "area_m2": "",
                 "floor": "",
                 "estate_series": "",
@@ -154,13 +154,13 @@ class VissEstateSpider(scrapy.Spider):
             result_object["amenities"] = infotable["Ērtības:"]
         except:
             pass
-        try:
-            result_object["post_in_data"] = infotable["Pievienots:"].strip().split(" ")[0]
-        except:
-            pass
-        try:
-            result_object["post_in_time"] = infotable["Pievienots:"].strip().split(" ")[1]
-        except:
-            pass
+        # try:
+        #     result_object["post_in_data"] = infotable["Pievienots:"].strip().split(" ")[0]
+        # except:
+        #     pass
+        # try:
+        #     result_object["post_in_time"] = infotable["Pievienots:"].strip().split(" ")[1]
+        # except:
+        #     pass
 
         return result_object

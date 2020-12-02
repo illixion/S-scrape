@@ -100,7 +100,7 @@ class ReklamaEstateSpider(scrapy.Spider):
 
         try:
             result_object["price"] = "".join(
-                i for i in infotable["Cena\n\n\nEUR\nLVL\nUSD\n\n"] if i.isdigit()
+                i for i in page_html.select_one("#price-full").text if i.isdigit()
             )
         except:
             pass

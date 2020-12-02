@@ -43,7 +43,7 @@ class ELotsEstateSpider(scrapy.Spider):
     def parse_elots_estate(self, page_html, response={}):
         images = []
         try:
-            for image in page_html.select_one(".bxslider").findAll("img", {"class": "bxslider"}):
+            for image in page_html.select_one(".bxslider").findAll("img"):
                 images.append(
                     {"title": "Image", "url": image["src"]}
                 )

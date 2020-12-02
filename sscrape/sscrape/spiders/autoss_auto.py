@@ -71,10 +71,10 @@ class AutoSsAutoSpider(scrapy.Spider):
             "description": "",
             "images": "",
             "price": "0",
-            "year": "0",
+            "year": "",
             "engine": "",
             "transmision": "",
-            "mileage": "0",
+            "mileage": "",
             "colour": "",
             "type": "",
             "technical_inspection": "",
@@ -130,6 +130,14 @@ class AutoSsAutoSpider(scrapy.Spider):
             pass
         try:
             result_object["type"] = infotable["Virsbūves tips"]
+        except:
+            pass
+        try:
+            result_options = []
+            for feature in response.xpath('//h1[@class="subtitle is-4"][text()="Aprīkojums"]/following::li//text()').getall():
+                if len(feature) != 0 and feature != "-":
+                    result_options.append(feature.strip())
+            result_object["options_data"] = json.dumps(result_options)
         except:
             pass
         try:
