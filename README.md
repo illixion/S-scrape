@@ -11,7 +11,10 @@ Scrape content from ss.com
 
 Afterwards, configure the database:
 
-Edit lines 64-67 in `./sscrape/sscrape/middlewares.py` to use the correct MySQL details.
+Edit the following lines to use the correct MySQL details:
+
+* Lines 13-16 in `./sscrape/sscrape/pipelines.py`
+* Lines 64-67 in `./sscrape/sscrape/middlewares.py`
 
 ## Usage
 
