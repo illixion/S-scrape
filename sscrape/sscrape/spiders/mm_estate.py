@@ -8,7 +8,7 @@ from ..items import EstateItem
 class MmEstateSpider(scrapy.Spider):
     name = 'mmlv-estate'
     allowed_domains = ['mm.lv', "im.mm.lv"]
-    start_urls = ['https://mm.lv/dzivokli-riga']
+    start_urls = ['https://mm.lv/dzivokli?all', 'https://mm.lv/majas?all']
 
     def parse(self, response):
         for url in response.xpath('//*[@id="listing-card-list"]/li[contains(@class, "listing-card")]//a/@href').getall():
@@ -17,6 +17,9 @@ class MmEstateSpider(scrapy.Spider):
     def parse_ad(self, response):
         page_html = BeautifulSoup(response.text, "html.parser")
         result = self.parse_mm_estate(page_html, response)
+
+        if result == None:
+            return
 
         item = EstateItem()
         item["images"] = result["images"],
@@ -48,7 +51,12 @@ class MmEstateSpider(scrapy.Spider):
         except:
             pass
 
-        table_elements = response.xpath('//div[@class="item-block second-item-block item-description"]//ul[@class="ad-detail-info"]//li//text()').getall()
+        table_elements = response.xpath('//div[@id="custom_fields"]/following-sibling::ul//li//text()').getall()
+        try:
+            table_elements.remove("Apraksts")
+        except ValueError:
+            pass
+
         infotable = {}
         for idx, val in enumerate(table_elements):
             if idx % 2 == 0:
@@ -80,9 +88,16 @@ class MmEstateSpider(scrapy.Spider):
         }
 
         try:
+            price = page_html.select_one(".currency-value").text
+            if "/mēn" in price or "Pērk" in price or "/d" in price:
+                return None
             result_object["price"] = "".join(
                 i for i in page_html.select_one(".currency-value").text if i.isdigit()
             )
+        except:
+            pass
+        try:
+            if infotable[" Darījuma veids"] == "Pērk": return None
         except:
             pass
         try:
@@ -118,27 +133,35 @@ class MmEstateSpider(scrapy.Spider):
         except:
             pass
         try:
-            result_object["rooms"] = infotable["Istabu skaits"]
+            result_object["rooms"] = infotable[" Istabu skaits"]
         except:
             pass
         try:
-            result_object["area_m2"] = infotable["Platība"]
+            result_object["area_m2"] = infotable[" Platība"]
         except:
             pass
         try:
-            result_object["floor"] = infotable["Stāvs"]
+            result_object["area_m2"] = infotable[" Majas platība"]
         except:
             pass
         try:
-            result_object["estate_series"] = infotable["Sērija"]
+            result_object["floor"] = infotable[" Stāvs"]
         except:
             pass
         try:
-            result_object["estate_type"] = infotable["Ēkas tips"]
+            result_object["estate_series"] = infotable[" Sērija"]
         except:
             pass
         try:
-            result_object["amenities"] = infotable["Ērtības"]
+            result_object["estate_type"] = infotable[" Ēkas tips"]
+        except:
+            pass
+        try:
+            result_object["estate_type"] = infotable[" Mājas tips"]
+        except:
+            pass
+        try:
+            result_object["amenities"] = infotable[" Ērtības"]
         except:
             pass
         try:

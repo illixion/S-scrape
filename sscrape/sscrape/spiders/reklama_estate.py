@@ -8,7 +8,7 @@ from ..items import EstateItem
 class ReklamaEstateSpider(scrapy.Spider):
     name = 'reklama-estate'
     allowed_domains = ['reklama.bb.lv']
-    start_urls = ["https://reklama.bb.lv/lv/realty/apartments/table.html?rss"]
+    start_urls = ["https://reklama.bb.lv/lv/realty/apartments/sell/table.html?rss"]
 
     def parse(self, response):
         for url in response.xpath("//channel/item/link/text()").getall():
@@ -141,7 +141,7 @@ class ReklamaEstateSpider(scrapy.Spider):
         except:
             pass
         try:
-            result_object["area_m2"] = infotable["Plat., kv. m"]
+            result_object["area_m2"] = infotable["Plat., kv.\xa0m"]
         except:
             pass
         try:
