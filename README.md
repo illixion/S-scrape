@@ -1,6 +1,6 @@
 # S-Scrape
 
-Scrape content from ss.com
+Scrape auto and estate ads from many Latvian classidieds websites.
 
 ## Installation
 
