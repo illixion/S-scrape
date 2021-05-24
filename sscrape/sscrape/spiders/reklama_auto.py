@@ -44,8 +44,8 @@ class ReklamaAutoSpider(scrapy.Spider):
         images = []
 
         try:
-            for image in page_html.select_one(".coda-nav").findAll("img"):
-                images.append({"title": "Image", "url": image["data-src"]})
+            for image in page_html.select_one(".photo-slider").findAll("img"):
+                images.append({"title": "Image", "url": image["src"]})
         except:
             pass
         infotable = {
