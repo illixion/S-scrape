@@ -48,7 +48,7 @@ class MmAutoSpider(scrapy.Spider):
         except:
             pass
 
-        table_elements = response.xpath('//div[@class="item-block second-item-block item-description"]//ul[@class="ad-detail-info"]//li//text()').getall()
+        table_elements = response.xpath('//div[@id="custom_fields"]/following-sibling::ul//li//text()').getall()
         try:
             table_elements.remove("Galvenās iezīmes")
         except ValueError:
@@ -131,7 +131,7 @@ class MmAutoSpider(scrapy.Spider):
         except:
             pass
         try:
-            result_object["type"] = infotable["Virsbūves tips"]
+            result_object["type"] = infotable[" Virsbūves tips"]
         except:
             pass
         try:

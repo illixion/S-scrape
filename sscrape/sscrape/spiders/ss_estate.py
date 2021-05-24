@@ -26,18 +26,34 @@ class SsEstateSpider(scrapy.Spider):
         item["thumbnail"] = (response.xpath('//img[@class="pic_thumbnail isfoto"]/@src').get() or '', )
         item["description"] = ("".join(response.xpath('//div[@id="msg_div_msg"]/text()').getall()) or '', )
 
-        price_re = response.xpath('//*[@id="tdo_8"]/text()').re(r"[\d ]+€ ")
+        price_re = response.xpath('//*[@id="tdo_8"]/text()').re(r"^.+?(?=\€)")
         if len(price_re) != 0:
             price = "".join(
-                i for i in response.xpath('//*[@id="tdo_8"]/text()').re(r"[\d ]+€ ")[0] if i.isdigit()
+                i for i in response.xpath('//*[@id="tdo_8"]/text()').re(r"^.+?(?=\€)")[0] if i.isdigit()
             )
         else:
             price = 0
-
         item["price"] = (str(price), )
-        item["city"] = (response.xpath('//td[@id="tdo_20"]/b/text()').get() or '', )
-        item["district"] = (response.xpath('//td[@id="tdo_856"]/b/text()').get() or '', )
-        item["street"] = (response.xpath('//td[@id="tdo_11"]/b/text()').get() or '', )
+
+        location_other = response.xpath('//td[@id="tdo_1284"]/text()').get()
+        if location_other is not None:
+            try:
+                item["city"] = (location_other.strip().split(", ")[0] or '', )
+            except:
+                pass
+            try:
+                item["district"] = (location_other.strip().split(", ")[1] or '', )
+            except:
+                pass
+            try:
+                item["street"] = (location_other.strip().split(", ")[2] or '', )
+            except:
+                pass
+        else:
+            item["city"] = (response.xpath('//td[@id="tdo_20"]/b/text()').get() or '', )
+            item["district"] = (response.xpath('//td[@id="tdo_856"]/b/text()').get() or '', )
+            item["street"] = (response.xpath('//td[@id="tdo_11"]/b/text()').get() or '', )
+
         item["rooms"] = (response.xpath('//td[@id="tdo_1"]/text()').get() or '', )
         item["area_m2"] = (response.xpath('//td[@id="tdo_3"]/text()').get() or '', )
         item["floor"] = (response.xpath('//td[@id="tdo_4"]/text()').get() or '', )
